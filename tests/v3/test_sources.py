@@ -16,14 +16,19 @@ from nt_v3.transcript_sources import (
 from nt_v3.transcript_watcher import TranscriptWatcher
 
 
-def test_builtins_have_five_sources():
+def test_builtins_have_six_sources():
     with tempfile.TemporaryDirectory(prefix="nt-src-") as tmp:
         home = Path(tmp)
         sources = builtin_sources(home)
-        assert [s.id for s in sources] == ["copilot", "codex", "kimi", "grok", "reasonix"]
+        assert [s.id for s in sources] == [
+            "copilot", "codex", "kimi", "grok", "reasonix", "omp",
+        ]
+        home_r = home.resolve()
         for s in sources:
-            assert home.resolve() in s.base.resolve().parents or s.base.resolve() == home.resolve()
-        assert builtin_sources(home)[1].globs == ("sessions/**/*.jsonl", "archived_sessions/*.jsonl")
+            assert s.base.resolve() == home_r or home_r in s.base.resolve().parents
+        assert builtin_sources(home)[1].globs == (
+            "sessions/**/*.jsonl", "archived_sessions/*.jsonl",
+        )
 
 
 def test_env_override_moves_codex_base():

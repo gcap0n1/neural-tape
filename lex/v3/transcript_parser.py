@@ -1,21 +1,23 @@
 """Parse supported assistant transcripts into classifier-friendly text.
 
-Neural Tape v3 accepts four JSONL schemas: the legacy VS Code GitHub Copilot
+Neural Tape v3 accepts five JSONL schemas: the legacy VS Code GitHub Copilot
 schema, the Codex rollout schema stored under ``~/.codex/sessions``, the
 Kimi Code wire schema (protocol 1.5) stored under
-``~/.kimi-code/sessions/*/session_*/agents/main/wire.jsonl``, and the
+``~/.kimi-code/sessions/*/session_*/agents/main/wire.jsonl``, the
 Grok Build schema stored under
-``~/.grok/sessions/<urlencoded-cwd>/<uuid>/chat_history.jsonl``.  Only user,
+``~/.grok/sessions/<urlencoded-cwd>/<uuid>/chat_history.jsonl``, and the
+Oh My Pi schema stored under
+``~/.omp/agent/sessions/<encoded-cwd>/<session>.jsonl``.  Only user,
 assistant, reasoning-summary, and tool-call data is retained; system/developer
 instructions, harness reminders and tool outputs are intentionally excluded.
 """
 
 from __future__ import annotations
 
+import ast
 import json
 from datetime import datetime
 from pathlib import Path
-
 
 MAX_REASONING = 2000
 MAX_CONTENT = 3000
@@ -95,6 +97,15 @@ class TranscriptParser:
                 return "tool_calls"
             return None
 
+        # Oh My Pi: OpenAI-format payloads inside "message" events.
+        if etype == "message" and isinstance(event.get("message"), (dict, str)):
+            role = self._omp_load(event["message"]).get("role")
+            if role == "user":
+                return "user"
+            if role == "assistant":
+                return "assistant"
+            return None
+
         if etype == "turn.prompt":
             return "user" if self._kimi_prompt_text(event) else None
         if etype == "context.append_loop_event":
@@ -153,6 +164,11 @@ class TranscriptParser:
             return f"[{ts}] [ASSISTANT reasoning]\n{reasoning[:MAX_REASONING]}" if reasoning else None
         if etype == "assistant" and self._is_grok_event(event):
             return self._grok_assistant(event, ts)
+        # Oh My Pi: session header and OpenAI-format message payloads.
+        if etype == "session" and isinstance(event.get("cwd"), str):
+            return f"[{ts}] [SESSION START] | source: omp | cwd: {event['cwd']}"
+        if etype == "message" and isinstance(event.get("message"), (dict, str)):
+            return self._omp_message(event, ts)
 
         # Reasonix (DeepSeek): OpenAI-chat-format events keyed by role.
         if self._is_reasonix_event(event):
@@ -438,6 +454,79 @@ class TranscriptParser:
         if not text:
             text = "(empty)"
         return f"[{ts}] [TOOL → {name}] {text[:MAX_TOOL_ARGS]}"
+
+    # ---- Oh My Pi schema helpers --------------------------------------------
+    #
+    # Layout: ~/.omp/agent/sessions/<encoded-cwd>/<session>.jsonl
+    #   session  -> {type, version, id, timestamp, cwd}
+    #   message  -> {type, id, parentId, timestamp, message: <encoded dict>}
+    #               roles: user | assistant | toolResult (tool outputs):
+    #               content blocks: text | thinking | toolCall | image
+
+    @staticmethod
+    def _omp_load(value) -> dict:
+        """Decode omp's dict-or-string payloads (JSON or python repr)."""
+        if isinstance(value, dict):
+            return value
+        if not isinstance(value, str):
+            return {}
+        try:
+            loaded = json.loads(value)
+            return loaded if isinstance(loaded, dict) else {}
+        except (json.JSONDecodeError, TypeError):
+            pass
+        try:
+            loaded = ast.literal_eval(value)
+            return loaded if isinstance(loaded, dict) else {}
+        except (ValueError, SyntaxError):
+            return {}
+
+    def _omp_message(self, event: dict, ts: str) -> str | None:
+        message = self._omp_load(event.get("message"))
+        role = message.get("role")
+        content = message.get("content")
+        if not isinstance(content, list):
+            return None
+        if role == "user":
+            text = "\n".join(
+                block.get("text", "")
+                for block in content
+                if isinstance(block, dict)
+                and block.get("type") == "text"
+                and isinstance(block.get("text"), str)
+            ).strip()
+            return f"[{ts}] [USER]\n{text[:MAX_CONTENT]}" if text else None
+        if role == "assistant":
+            parts: list[str] = []
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                btype = block.get("type")
+                if btype == "thinking" and isinstance(block.get("thinking"), str):
+                    thinking = block["thinking"].strip()
+                    if thinking:
+                        parts.append(
+                            f"[{ts}] [ASSISTANT reasoning]\n{thinking[:MAX_REASONING]}"
+                        )
+                elif btype == "text" and isinstance(block.get("text"), str):
+                    text = block["text"].strip()
+                    if text:
+                        parts.append(f"[{ts}] [ASSISTANT]\n{text[:MAX_CONTENT]}")
+                elif btype == "toolCall":
+                    name = block.get("name", "?")
+                    intent = block.get("intent")
+                    if isinstance(intent, str) and intent.strip():
+                        parts.append(f"[{ts}] [TOOL → {name}] {intent.strip()}")
+                    else:
+                        args = block.get("arguments")
+                        try:
+                            args = self._omp_load(args) if isinstance(args, str) else args
+                        except Exception:
+                            args = None
+                        compact = self._compact_args(args) if args is not None else ""
+                        parts.append(f"[{ts}] [TOOL → {name}] {compact}".strip())
+            return "\n".join(parts) if parts else None
+        return None
 
     @staticmethod
     def _compact_args(args) -> str:

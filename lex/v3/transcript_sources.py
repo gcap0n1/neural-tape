@@ -30,6 +30,7 @@ WS_CODEX_CWD = "codex_cwd"
 WS_KIMI_WD = "kimi_wd"
 WS_GROK_ENCODED = "grok_urlencoded"
 WS_REASONIX_PROJECT = "reasonix_project"
+WS_SESSION_CWD = "session_cwd"
 WS_PARENT_DIR = "parent_dir"
 
 FILTER_CODEX = "codex"
@@ -37,7 +38,7 @@ FILTER_GROK = "grok"
 FILTER_REASONIX = "reasonix"
 
 _SESSION_STRATEGIES = {SESSION_FILE_STEM, SESSION_PARENT_DIR, SESSION_KIMI_DIR}
-_WORKSPACE_STRATEGIES = {WS_VSCODE, WS_CODEX_CWD, WS_KIMI_WD, WS_GROK_ENCODED, WS_REASONIX_PROJECT, WS_PARENT_DIR}
+_WORKSPACE_STRATEGIES = {WS_VSCODE, WS_CODEX_CWD, WS_KIMI_WD, WS_GROK_ENCODED, WS_REASONIX_PROJECT, WS_SESSION_CWD, WS_PARENT_DIR}
 _FILTERS = {"", FILTER_CODEX, FILTER_GROK, FILTER_REASONIX}
 
 _KIMI_WD_RE = re.compile(r"^wd_(?P<label>.+)_[0-9a-f]{12}$")
@@ -69,7 +70,7 @@ def builtin_sources(
     grok_home: Path | None = None,
     env: dict[str, str] | None = None,
 ) -> list[SourceManifest]:
-    """Return the five built-in manifests with env-overridable bases.
+    """Return the six built-in manifests with env-overridable bases.
 
     Each source id can be overridden via ``NEURALTAPE_<ID>_HOME`` (e.g.
     ``NEURALTAPE_CODEX_HOME``).  Explicit constructor kwargs take
@@ -146,6 +147,14 @@ def builtin_sources(
             session_id=SESSION_FILE_STEM,
             workspace=WS_REASONIX_PROJECT,
             subagent_filter=FILTER_REASONIX,
+        ),
+        SourceManifest(
+            id="omp",
+            label="Oh My Pi",
+            base=_base("omp", home / ".omp" / "agent" / "sessions", None),
+            globs=("*/*.jsonl",),
+            session_id=SESSION_FILE_STEM,
+            workspace=WS_SESSION_CWD,
         ),
     ]
 
@@ -280,6 +289,15 @@ def _workspace_label(path: Path, source: SourceManifest) -> str:
         encoded = path.parent.parent.name
         decoded = encoded[1:].replace("-", "/") if encoded.startswith("-") else encoded
         return Path(decoded).name or "unknown"
+    if source.workspace == WS_SESSION_CWD:
+        # Oh My Pi: the transcript's first "session" event carries the cwd;
+        # fall back to the dash-encoded parent directory name.
+        cwd = _session_cwd(path)
+        if cwd:
+            return Path(cwd).name
+        encoded = path.parent.name
+        decoded = encoded.strip("-").replace("-", "/") if encoded else ""
+        return Path(decoded).name or "unknown"
     return path.parent.name or "unknown"
 
 
@@ -327,6 +345,24 @@ def legacy_workspace_label(path: Path) -> str:
     return _vscode_workspace_label(path)
 
 
+
+
+def _session_cwd(transcript: Path) -> str | None:
+    """Return the cwd from the first 'session' event of an omp transcript."""
+    try:
+        with Path(transcript).open("r", encoding="utf-8", errors="replace") as stream:
+            for line in stream:
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(event, dict) and event.get("type") == "session":
+                    cwd = event.get("cwd")
+                    if isinstance(cwd, str) and cwd:
+                        return cwd
+    except OSError:
+        return None
+    return None
 def _codex_cwd(transcript: Path) -> str | None:
     try:
         with Path(transcript).open("r", encoding="utf-8", errors="replace") as stream:

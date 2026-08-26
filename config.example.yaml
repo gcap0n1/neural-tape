@@ -38,7 +38,7 @@ v3:
     assistant: "assistant"
     user: "user"
   sources:
-    # Built-in sources (copilot, codex, kimi, grok, reasonix) can be disabled here.
+    # Built-in sources (copilot, codex, kimi, grok, reasonix, omp) can be disabled here.
     disabled: []
     # Custom agents: add a manifest per agent, no code changes needed.
     # custom:

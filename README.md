@@ -50,6 +50,7 @@ On Linux, run the idle-check loop with the shipped systemd user unit
 | Kimi Code | `~/.kimi-code/sessions/*/*/agents/main/wire.jsonl` | subagent wires skipped |
 | Grok Build | `~/.grok/sessions/<enc-cwd>/<uuid>/chat_history.jsonl` | subagent sessions skipped |
 | DeepSeek Reasonix | `~/.reasonix/projects/<enc-cwd>/sessions/*.jsonl` | `.events`/`.conflicts` sidecars skipped |
+| Oh My Pi | `~/.omp/agent/sessions/<enc-cwd>/<session>.jsonl` | session cwd label, tool outputs excluded |
 
 Sources are **data-driven manifests** in `lex/v3/transcript_sources.py`.
 Add an agent of your own by writing a `v3.sources.custom.<id>` entry in
@@ -57,7 +58,7 @@ Add an agent of your own by writing a `v3.sources.custom.<id>` entry in
 `v3.sources.disabled`. Bases are overridable via `NEURALTAPE_<ID>_HOME`
 (and `REASONIX_HOME` for Reasonix).
 
-## Persona
+## Persona and redaction
 
 Nothing about *your* identity is hardcoded. `v3.persona` (assistant name,
 owner name) drives the classifier prompt and the archive frontmatter;
