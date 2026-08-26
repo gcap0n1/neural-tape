@@ -22,4 +22,4 @@ or env NEURALTAPE_V3=1. v2.2 (`lex/v22/`) is disabled since 2026-07-20.
 
 from __future__ import annotations
 
-__version__ = "3.2.0"
+__version__ = "3.3.0"
