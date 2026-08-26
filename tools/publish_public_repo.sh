@@ -4,7 +4,8 @@
 #
 # How it works:
 #   1. clone the PUBLIC repo into a temp dir (its history is release-only)
-#   2. overlay the local repo's tracked files (git archive of HEAD)
+#   2. clear its tracked tree, overlay the local HEAD export (git archive,
+#      which honors .gitattributes export-ignore) — deletions propagate
 #   3. commit + push to the public repo
 #
 # Usage:
@@ -22,7 +23,9 @@ trap 'rm -rf "$TMP"' EXIT
 echo "[publish] cloning public repo $ORG/$REPO -> $TMP"
 git clone -q "https://github.com/$ORG/$REPO.git" "$TMP/repo"
 
-echo "[publish] overlaying tracked tree from local HEAD"
+echo "[publish] clearing previous tree and overlaying local HEAD export"
+git -C "$TMP/repo" rm -rq .
+
 cd "$ROOT"
 git archive HEAD | tar -x -C "$TMP/repo"
 
