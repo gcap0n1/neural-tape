@@ -1,0 +1,69 @@
+# Neural Tape example configuration
+# Runtime LLM settings live in `.env`, not in this YAML file.
+
+pre_load:
+  max_insights: 10
+  max_patterns: 5
+  lookback_days: 7
+  include_etercervo: true
+  include_lex_memory: true
+
+paths:
+  neural_tape_root: "/path/to/NeuralTape"
+  etercervo_wiki: "/path/to/EterCervo"
+  lex_memory: "/path/to/EterCervo/_Lex/memory.md"
+
+v22:
+  transcript_glob: "~/.config/Code/User/workspaceStorage/*/GitHub.copilot-chat/transcripts/*.jsonl"
+  idle_threshold_min: 10
+  max_age_minutes: 60
+  classifier_max_insights: 7
+  classifier_chunk_chars: 30000
+  scheduler: "systemd-user"
+
+v3:
+  enabled: false
+  storage:
+    db_path: "tape/v3/neuraltape.db"
+  cost:
+    # 0 = unlimited. Positive integers re-enable the daily cap.
+    daily_limit_calls: 0
+    daily_limit_tokens: 0
+    fallback_notify_interval_hours: 24
+  events:
+    enabled_sources: ["transcript", "git.commit"]
+  persona:
+    # Names used in the classifier prompt and archive frontmatter.
+    # Override for your own agent/owner pair.
+    assistant: "lex"
+    user: "Guglielmo"
+  sources:
+    # Built-in sources (copilot, codex, kimi, grok, reasonix) can be disabled here.
+    disabled: []
+    # Custom agents: add a manifest per agent, no code changes needed.
+    # custom:
+    #   reasonix:
+    #     base: "~/.reasonix/sessions"
+    #     globs: ["**/*.jsonl"]
+    #     session_id: parent_dir     # file_stem | parent_dir | kimi_session_dir
+    #     workspace: parent_dir      # vscode | codex_cwd | kimi_wd | grok_urlencoded | parent_dir
+  redaction:
+    extra_patterns: []
+  memory:
+    promote_threshold_working_to_episodic: 0.6
+    promote_threshold_episodic_to_semantic: 0.8
+    promote_min_age_hours: 4
+    promote_min_similar_episodes: 2
+    promote_min_sessions_for_semantic: 3
+    working_ttl_hours: 48
+
+storage:
+  memory_file: "_Lex/memory.md"
+  archive_dir: "neural-tape/tape/archive"
+  state_file: "neural-tape/tape/.state/v22-session-state.json"
+  log_file: "neural-tape/tape/.state/v22-cron.log"
+
+# .env example:
+# LLM_API_KEY=your-key-here
+# LLM_BASE_URL=https://api.deepseek.com
+# LLM_MODEL=deepseek-v4-flash

@@ -1,0 +1,2 @@
+# Neural Tape v2.2 live dependency
+pyyaml>=6.0

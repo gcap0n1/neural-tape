@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Neural Tape runtime data (keep structure, ignore contents)
+tape/.state/*
+tape/sessions/*
+tape/staging/*
+tape/archive/*
+logs/*
+!tape/.state/.gitkeep
+!tape/archive/.gitkeep
+!tape/sessions/.gitkeep
+!tape/staging/.gitkeep
+session-context.md
+
+# Config with secrets
+.env
+config.yaml
+!config.example.yaml
+tape/v3/*
