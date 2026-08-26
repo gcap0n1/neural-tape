@@ -2,7 +2,7 @@
 
 **Version:** 0.1 (draft)
 **Status:** Draft — In implementazione
-**Author:** Lex per Guglielmo
+**Author:** Lex per the owner
 **Date:** 2026-07-14
 **Depends on:** Fase 0 completata (47/47 verdi, 6 workspace bootstrap)
 **Open Questions risolte:** Q1=D, Q2=C, Q3=SQLite, Q4=C, Q5=D, Q6=M1+M2
@@ -18,7 +18,7 @@ Fase 1 è il **cuore cognitivo** di NeuralTape v3. Produce:
 - Working Set — `working-set.json` per progetto
 
 **Regola:** v3 classifier scrive in Storage (SQLite) in parallelo a v2.2 che scrive in
-`_Lex/memory.md`. v2.2 resta attivo finché non abbiamo validato che v3 produce insight
+il file di memoria manuale (v2.2). v2.2 resta attivo finché non abbiamo validato che v3 produce insight
 migliori (v2.2 viene spento dopo la validazione con metriche M1+M2).
 
 ---
@@ -146,7 +146,7 @@ class ClassifierV3:
 **Prompt** (evoluzione di v2.2):
 
 ```
-Sei Lex, l'agente AI senior developer di Guglielmo. Hai appena concluso una
+Sei Lex, l'agente AI senior developer di the owner. Hai appena concluso una
 sessione di lavoro in VS Code.
 
 Il tuo compito: estrarre insight strutturati per il sistema di memoria a layer
@@ -215,7 +215,7 @@ class MemoryPromoter:
 - `working`: cancellato dopo 48h (o archiviato nella cronologia)
 - `episodic`: retention 8 settimane
 - `semantic`: retention permanente (fino a esplicita archiviazione)
-- `identity`: gestito da EterCervo (`_Lex/identity.md` + `soul.md`), NON da NeuralTape
+- `identity`: gestito dal vault del profilo locale (`identity.md` + `soul.md`), NON da NeuralTape
 
 **Trigger di tick:**
 - Dopo ogni classificazione (immediato, per l'episodio appena inserito)

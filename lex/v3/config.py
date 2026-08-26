@@ -45,7 +45,7 @@ DEFAULTS = {
         "promote_min_sessions_for_semantic": 3,
         "working_ttl_hours": 48,
     },
-    "persona": {"assistant": "lex", "user": "Guglielmo"},
+    "persona": {"assistant": "assistant", "user": "user"},
     "sources": {"disabled": [], "custom": {}},
 }
 
@@ -185,12 +185,10 @@ def load(tape_root: Path, config_path: Path | None = None) -> V3Config:
                 log.warning("Ignoring source %r: invalid manifest", source_id)
                 continue
             sources.append(manifest)
-
-    # persona: assistant/owner names used in prompt and archive frontmatter
     persona_cfg = merged.get("persona") or {}
     persona = PersonaConfig(
-        assistant=str(persona_cfg.get("assistant") or "lex").strip() or "lex",
-        user=str(persona_cfg.get("user") or "Guglielmo").strip() or "Guglielmo",
+        assistant=str(persona_cfg.get("assistant") or "assistant").strip() or "assistant",
+        user=str(persona_cfg.get("user") or "user").strip() or "user",
     )
 
     return V3Config(

@@ -10,8 +10,8 @@ pre_load:
 
 paths:
   neural_tape_root: "/path/to/NeuralTape"
-  etercervo_wiki: "/path/to/EterCervo"
-  lex_memory: "/path/to/EterCervo/_Lex/memory.md"
+  etercervo_wiki: "/path/to/YourKnowledgeVault"
+  lex_memory: "/path/to/YourKnowledgeVault/memory.md"
 
 v22:
   transcript_glob: "~/.config/Code/User/workspaceStorage/*/GitHub.copilot-chat/transcripts/*.jsonl"
@@ -35,8 +35,8 @@ v3:
   persona:
     # Names used in the classifier prompt and archive frontmatter.
     # Override for your own agent/owner pair.
-    assistant: "lex"
-    user: "Guglielmo"
+    assistant: "assistant"
+    user: "user"
   sources:
     # Built-in sources (copilot, codex, kimi, grok, reasonix) can be disabled here.
     disabled: []
@@ -58,7 +58,7 @@ v3:
     working_ttl_hours: 48
 
 storage:
-  memory_file: "_Lex/memory.md"
+  memory_file: "memory.md"
   archive_dir: "neural-tape/tape/archive"
   state_file: "neural-tape/tape/.state/v22-session-state.json"
   log_file: "neural-tape/tape/.state/v22-cron.log"

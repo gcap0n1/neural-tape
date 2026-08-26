@@ -27,7 +27,7 @@ def test_parser_keeps_legacy_copilot_compatibility():
                 {
                     "type": "user.message",
                     "timestamp": "2026-07-30T10:00:00Z",
-                    "data": {"content": "Apri EterCervo"},
+                    "data": {"content": "Apri MyWorkspace"},
                 },
                 {
                     "type": "assistant.message",
@@ -39,7 +39,7 @@ def test_parser_keeps_legacy_copilot_compatibility():
 
         parsed = TranscriptParser().parse_delta(transcript)
 
-        assert "[USER]\nApri EterCervo" in parsed
+        assert "[USER]\nApri MyWorkspace" in parsed
         assert "[ASSISTANT reasoning]\nVerifico prima" in parsed
         assert "[ASSISTANT]\nFatto" in parsed
 
@@ -53,7 +53,7 @@ def test_parser_reads_codex_rollout_without_system_or_tool_outputs():
                 {
                     "type": "session_meta",
                     "timestamp": "2026-07-31T10:00:00Z",
-                    "payload": {"cwd": "/work/EterCervo", "source": "vscode"},
+                    "payload": {"cwd": "/work/MyWorkspace", "source": "vscode"},
                 },
                 {
                     "type": "response_item",
@@ -115,7 +115,7 @@ def test_parser_reads_codex_rollout_without_system_or_tool_outputs():
         parsed = parser.parse_delta(transcript)
         counts = parser.parse_delta_structured(transcript)
 
-        assert "cwd: /work/EterCervo" in parsed
+        assert "cwd: /work/MyWorkspace" in parsed
         assert "[USER]\nSistema Neural Tape" in parsed
         assert "[ASSISTANT reasoning]\nCerco la causa" in parsed
         assert "[ASSISTANT]\nProblema corretto" in parsed
@@ -148,7 +148,7 @@ def test_watcher_discovers_copilot_and_codex_transcripts():
         )
         _write_jsonl(
             codex,
-            [{"type": "session_meta", "payload": {"cwd": "/work/EterCervo"}}],
+            [{"type": "session_meta", "payload": {"cwd": "/work/MyWorkspace"}}],
         )
         _write_jsonl(copilot, [{"type": "user.message", "data": {"content": "ciao"}}])
 
@@ -158,7 +158,7 @@ def test_watcher_discovers_copilot_and_codex_transcripts():
 
         assert codex.resolve() in paths
         assert copilot.resolve() in paths
-        assert watcher.get_workspace_label(codex) == "EterCervo"
+        assert watcher.get_workspace_label(codex) == "MyWorkspace"
 
 
 def test_harvester_assigns_codex_project_from_session_cwd():
@@ -166,7 +166,7 @@ def test_harvester_assigns_codex_project_from_session_cwd():
 
     with tempfile.TemporaryDirectory(prefix="nt-harvest-codex-") as tmp:
         root = Path(tmp)
-        project = root / "EterCervo"
+        project = root / "MyWorkspace"
         project.mkdir()
         transcript = root / "rollout-project.jsonl"
         _write_jsonl(
@@ -268,7 +268,7 @@ def _grok_events() -> list[dict]:
         },
         {
             "type": "user",
-            "content": [{"type": "text", "text": "<user_info>\nWorkspace Path: /work/EterCervo\n</user_info>"}],
+            "content": [{"type": "text", "text": "<user_info>\nWorkspace Path: /work/MyWorkspace\n</user_info>"}],
         },
         {
             "type": "user",
@@ -292,7 +292,7 @@ def _grok_events() -> list[dict]:
                 {
                     "id": "call-1",
                     "name": "list_dir",
-                    "arguments": '{"target_directory":"/work/EterCervo"}',
+                    "arguments": '{"target_directory":"/work/MyWorkspace"}',
                 }
             ],
         },
@@ -333,7 +333,7 @@ def test_parser_reads_grok_chat_without_harness_or_tool_output():
 def test_watcher_discovers_grok_main_and_skips_subagents():
     with tempfile.TemporaryDirectory(prefix="nt-watcher-grok-") as tmp:
         home = Path(tmp)
-        ws = "%2Fwork%2FEterCervo"
+        ws = "%2Fwork%2FMyWorkspace"
         main = (
             home / ".grok" / "sessions" / ws / "019ff6c3-ad8e-71d3-bfaf-e65d78742ade"
             / "chat_history.jsonl"
@@ -358,7 +358,7 @@ def test_watcher_discovers_grok_main_and_skips_subagents():
 
         assert main.resolve() in found
         assert child.resolve() not in found
-        assert watcher.get_workspace_label(main) == "EterCervo"
+        assert watcher.get_workspace_label(main) == "MyWorkspace"
         assert (
             TranscriptWatcher.get_session_id(main)
             == "019ff6c3-ad8e-71d3-bfaf-e65d78742ade"
@@ -372,14 +372,14 @@ def test_watcher_skips_codex_subagent_rollouts():
         sub = home / ".codex" / "sessions" / "2026" / "08" / "14" / "rollout-sub.jsonl"
         _write_jsonl(
             main,
-            [{"type": "session_meta", "payload": {"cwd": "/work/EterCervo", "source": "cli"}}],
+            [{"type": "session_meta", "payload": {"cwd": "/work/MyWorkspace", "source": "cli"}}],
         )
         _write_jsonl(
             sub,
             [{
                 "type": "session_meta",
                 "payload": {
-                    "cwd": "/work/EterCervo",
+                    "cwd": "/work/MyWorkspace",
                     "forked_from_id": "abc",
                     "agent_nickname": "Boyle",
                     "source": {"subagent": {"thread_spawn": {}}},

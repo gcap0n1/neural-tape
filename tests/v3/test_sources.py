@@ -77,10 +77,10 @@ def test_registry_codex_cwd_label_and_grok_encoded_label():
             json.dumps({"type": "session_meta", "payload": {"cwd": "/work/Zeus"}}) + "\n",
             encoding="utf-8",
         )
-        chat = home / ".grok" / "sessions" / "%2Fwork%2FEterCervo" / "u1" / "chat_history.jsonl"
+        chat = home / ".grok" / "sessions" / "%2Fwork%2FMyWorkspace" / "u1" / "chat_history.jsonl"
         registry = SourceRegistry(builtin_sources(home))
         assert registry.workspace_label_of(rollout) == "Zeus"
-        assert registry.workspace_label_of(chat) == "EterCervo"
+        assert registry.workspace_label_of(chat) == "MyWorkspace"
         assert registry.session_id_of(chat) == "u1"
 
 

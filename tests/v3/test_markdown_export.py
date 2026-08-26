@@ -23,7 +23,7 @@ from lex.v3.storage import Episode
 
 def _episode(title: str = "Test insight schema v3 export", conf: float = 0.85) -> Episode:
     return Episode(
-        project_id="EterCervo",
+        project_id="MyWorkspace",
         kind="episodic",
         source_type="transcript",
         title=title,
@@ -42,7 +42,7 @@ def test_export_single_episode_writes_standard_schema():
         ep = _episode()
         path = export_episode_to_markdown(
             ep, root,
-            workspace="EterCervo-Workspace.code-workspace",
+            workspace="MyWorkspace-Workspace.code-workspace",
             session_id="deadbeef-1234-5678-9012-abcdef000000",
             assistant="lex",
         )
@@ -53,7 +53,7 @@ def test_export_single_episode_writes_standard_schema():
         for needle in [
             "type: tool",
             "timestamp: 20",
-            "project: EterCervo",
+            "project: MyWorkspace",
             "confidence: high",
             "assistant: lex",
             "source: neural-tape-v3",

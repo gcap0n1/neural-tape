@@ -1,10 +1,21 @@
-# Neural Tape v2.2 Install
+# Neural Tape — Install
 
 ## Requirements
 
-- Python 3.10+
-- A VS Code workspace using GitHub Copilot Chat transcripts
-- An OpenAI-compatible API key, currently DeepSeek
+- Python 3.11+
+- An assistant with local JSONL transcripts (Copilot, Codex, Kimi Code,
+  Grok Build, DeepSeek Reasonix, or a custom source via config)
+- An OpenAI-compatible LLM endpoint (any provider; zero-LLM capture mode planned)
+
+## Install
+
+```bash
+git clone https://github.com/<org>/neural-tape.git
+cd neural-tape
+python -m venv .venv && .venv/bin/pip install -e .
+# or from PyPI:
+# pip install neural-tape
+```
 
 ## Environment
 
@@ -23,37 +34,47 @@ LLM_BASE_URL=https://api.deepseek.com
 LLM_MODEL=deepseek-v4-flash
 ```
 
-Set these paths in `config.yaml`:
-
-```yaml
-paths:
-	neural_tape_root: "/path/to/NeuralTape"
-	etervelo_wiki: "/path/to/EterCervo"
-	lex_memory: "/path/to/EterCervo/_Lex/memory.md"
-```
-
 ## Validate
 
-```bash
-cd /path/to/NeuralTape
-ETERCERVO_ROOT=/path/to/EterCervo /usr/bin/python lex/v22/run.py --once <session-id-prefix> --preview -v
-```
-
-`--preview` calls the classifier and prints extracted insights without writing memory or advancing the offset.
-
-## Run automatically
-
-Use the wrapper:
+Classify one transcript id (or unique prefix) once, without recurring timers:
 
 ```bash
-lex/v22/run-cron.sh
+.venv/bin/neuraltape --once <session-id-prefix> --project-root /path/to/project -v
 ```
 
-On Linux with user systemd:
+Or check module health and config status:
 
 ```bash
-systemctl --user status neural-tape-v22.timer
-tail -40 tape/.state/v22-cron.log
+.venv/bin/neuraltape --selfcheck
+.venv/bin/neuraltape --status
 ```
 
-The timer should run every 5 minutes. Classification only happens when the transcript is idle.
+## Run automatically (Linux, user systemd)
+
+Install and enable the 5-minute timer:
+
+```bash
+mkdir -p ~/.config/systemd/user
+cp lex/v3/neural-tape-v3.{service,timer} ~/.config/systemd/user/
+# adapt paths inside the .service file to your checkout
+systemctl --user daemon-reload
+systemctl --user enable --now neural-tape-v3.timer
+```
+
+Status and logs:
+
+```bash
+systemctl --user status neural-tape-v3.timer
+journalctl --user -u neural-tape-v3.service
+```
+
+Classification only happens when a transcript is idle and has grown since
+its last classification; already-classified sessions are skipped
+idempotently.
+
+## Configuration
+
+See `config.example.yaml`: `v3.persona` controls the assistant/owner names
+in the classifier prompt and archive frontmatter, `v3.sources` adds custom
+agent manifests or disables built-in ones, and `paths.etercervo_wiki`
+points at your knowledge vault for the pre-load generator.

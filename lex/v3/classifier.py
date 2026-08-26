@@ -9,9 +9,9 @@ Replaces v22/classifier.py. Key improvements:
 
 v3 is the active pipeline since 2026-07-20: it persists classified insights to
 Storage (SQLite `tape/v3/neuraltape.db`) and mirrors each episode to
-`tape/archive/<category>/` via markdown_export. v3 does NOT write
-`_Lex/memory.md` — that file is manual curated memory only (Lex writes it via
-`tools/lex-capture.py` in EterCervo). v2.2 is disabled since 2026-07-20.
+`tape/archive/<category>/` via markdown_export. v3 does NOT write the
+profile's manual memory file — that stays curated by the owner through
+their own tooling. v2.2 is disabled since 2026-07-20.
 """
 
 from __future__ import annotations

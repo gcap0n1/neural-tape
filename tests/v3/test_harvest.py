@@ -32,7 +32,7 @@ class _FakeWatcher:
 
 def _projects():
     return {
-        "etercervo": Path("/run/media/x/EterCervo"),
+        "myworkspace": Path("/run/media/x/MyWorkspace"),
         "zeus": Path("/run/media/x/Zeus"),
     }
 
@@ -51,9 +51,9 @@ def test_workspace_hint_label_is_case_insensitive():
     harvest = _load_harvest()
     assert (
         harvest.workspace_hint_project(
-            Path("/tmp/x.jsonl"), _FakeWatcher("etercervo"), _projects()
+            Path("/tmp/x.jsonl"), _FakeWatcher("myworkspace"), _projects()
         )
-        == "etercervo"
+        == "myworkspace"
     )
 
 

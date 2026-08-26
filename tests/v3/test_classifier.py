@@ -8,9 +8,8 @@ import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
-
 _FAKE_CONFIG = SimpleNamespace(
-    persona=SimpleNamespace(assistant="lex", user="Guglielmo"),
+    persona=SimpleNamespace(assistant="assistant", user="user"),
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))

@@ -7,10 +7,10 @@ without touching existing fields or body content.
 Fields added (only if missing):
     timestamp  — ISO-8601 derived from `date` (midnight local TZ). If the file
                  already has `timestamp`, it is preserved.
-    project    — normalized from `workspace` (e.g. 'EterCervo-Workspace.code-workspace'
-                 -> 'EterCervo'). If the file already has `project`, preserved.
+    project    — normalized from `workspace` (e.g. 'MyWorkspace.code-workspace'
+                 -> 'MyWorkspace'). If the file already has `project`, preserved.
     confidence — default 'medium' (v2.2 does not score confidence yet).
-    assistant  — default 'lex' (v2.2 only classifies Lex transcripts today).
+    assistant  — default 'assistant' (v2.2-era archives only).
 
 Usage:
     python tools/migrate_archive_schema.py --dry-run
@@ -38,7 +38,7 @@ WORKSPACE_SUFFIXES = (
 
 
 def normalize_project(workspace_or_project: str) -> str:
-    """Normalize 'EterCervo-Workspace.code-workspace' -> 'EterCervo'."""
+    """Normalize 'MyWorkspace.code-workspace' -> 'MyWorkspace'."""
     if not workspace_or_project:
         return "default"
     name = str(workspace_or_project)

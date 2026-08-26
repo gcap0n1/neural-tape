@@ -1,0 +1,9 @@
+# Local-only paths: tracked in the local repo (working memory), but excluded
+# from `git archive` exports — i.e. from the public mirror published by
+# tools/publish_public_repo.sh.
+/.neuraltape                     export-ignore
+/legacy                          export-ignore
+/lex/v22                         export-ignore
+/Neural_Tape_V2.2_PRD.md         export-ignore
+/_roadmap-v3-review.md           export-ignore
+/tools/rollback_to_v22.sh        export-ignore

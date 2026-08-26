@@ -88,7 +88,7 @@ def export_episode_to_markdown(
     *,
     workspace: str = "",
     session_id: str = "",
-    assistant: str = "lex",
+    assistant: str = "assistant",
 ) -> Path:
     """Write a single v3 episode as a standardized markdown archive file.
 
@@ -157,7 +157,7 @@ def export_episodes_bulk(
     archive_root: Path,
     *,
     workspace: str = "",
-    assistant: str = "lex",
+    assistant: str = "assistant",
 ) -> int:
     """Export multiple episodes. Returns count of files written.
 

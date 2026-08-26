@@ -13,8 +13,8 @@ from nt_v3.config import load
 def test_config_persona_defaults():
     with tempfile.TemporaryDirectory(prefix="nt-persona-") as tmp:
         cfg = load(Path(tmp))
-        assert cfg.persona.assistant == "lex"
-        assert cfg.persona.user == "Guglielmo"
+        assert cfg.persona.assistant == "assistant"
+        assert cfg.persona.user == "user"
 
 
 def test_config_persona_override():
@@ -50,8 +50,8 @@ v3:
             encoding="utf-8",
         )
         cfg = load(root, config_path=cfg_path)
-        assert cfg.persona.assistant == "lex"
-        assert cfg.persona.user == "Guglielmo"
+        assert cfg.persona.assistant == "assistant"
+        assert cfg.persona.user == "user"
 
 
 def test_parser_emits_persona_neutral_markers():
@@ -61,7 +61,7 @@ def test_parser_emits_persona_neutral_markers():
         events = [
             {
                 "type": "user.message",
-                "data": {"content": "Apri EterCervo"},
+                "data": {"content": "Apri MyWorkspace"},
                 "ts": 1000,
             },
             {
@@ -79,7 +79,7 @@ def test_parser_emits_persona_neutral_markers():
         )
         parsed = TranscriptParser().parse_delta(transcript)
 
-        assert "[USER]\nApri EterCervo" in parsed
+        assert "[USER]\nApri MyWorkspace" in parsed
         assert "[ASSISTANT reasoning]\nVerifico prima" in parsed
         assert "[ASSISTANT]\nFatto" in parsed
         assert "[LEX" not in parsed

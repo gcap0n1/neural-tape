@@ -4,7 +4,7 @@ Manages the lifecycle of episodes across 4 layers:
 1. Working  (hours)  — fresh session insights, immediate context
 2. Episodic (weeks)  — important events, bug fixes, API discoveries
 3. Semantic (months) — patterns, preferences, architectural decisions
-4. Identity (permanent) — NOT managed here; lives in EterCervo (_Lex/identity.md + soul.md)
+4. Identity (permanent) — NOT managed here; lives in the host profile vault (identity.md + soul.md)
 
 Promotion rules (from Fase 1 spec):
 - working → episodic: confidence >= 0.6 AND (age >= 4h OR >= 2 similar episodes)

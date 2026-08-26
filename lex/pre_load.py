@@ -173,8 +173,8 @@ class PreLoad:
     def _normalize_project_name(workspace_or_project: str) -> str:
         """Normalize a workspace label into a project name.
 
-        Accepts both legacy labels ('EterCervo-Workspace.code-workspace') and already
-        normalized values ('EterCervo'). Strips common VS Code suffixes.
+        Accepts both legacy labels ('MyWorkspace.code-workspace') and already
+        normalized values ('MyWorkspace'). Strips common VS Code suffixes.
         """
         if not workspace_or_project:
             return "default"
@@ -430,15 +430,14 @@ class PreLoad:
             "|------------|-----------|---------|",
             "| — | — | Run `deja_vu.py` to check |",
             "",
-            "## EterCervo Links",
+            "## Vault Links",
         ])
 
         if self.wiki_dir and self.wiki_dir.exists():
             lines.append(f"- [[{project}]] — Project wiki page")
-            lines.append("- [[Lex Memory]] — Operational patterns")
+            lines.append("- [[Memory]] — Operational patterns")
         else:
-            lines.append("- Wiki not configured — set `etervelo_wiki` in config.yaml")
-
+            lines.append("- Wiki not configured — set `etercervo_wiki` in config.yaml")
         if include_lex and self.lex_memory:
             mem_lines = self._read_lex_memory(20)
             if mem_lines:

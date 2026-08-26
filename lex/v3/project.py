@@ -1,6 +1,6 @@
 """project — project identity resolver (Q4=C).
 
-Strategy (decided with Guglielmo 2026-07-14):
+Strategy (decided with the owner 2026-07-14):
     1. realpath(root) — canonical path (resolves symlinks, critical because
        projects live on an external disk mounted under /run/media/<user>/).
     2. Look for .neuraltape/project.yaml in the root.
@@ -162,15 +162,10 @@ class ProjectResolver:
 
 # ---- bootstrap helper (una tantum per i 6 workspace) --------------------
 
-# Proposed IDs for the 6 currently-open workspace folders.
-# Used by bootstrap_projects.py; safe to override per-workspace.
+# Proposed IDs for known workspace folder names (override per-machine or
+# pass --root/--id explicitly). Used by bootstrap_projects.py.
 DEFAULT_BOOTSTRAP_IDS = {
-    "EterCervo": "etercervo",
-    "Zeus": "zeus",
-    "cais-lp": "cais-lp",
-    "tec-andrea-v2": "tec-andrea",
-    "S4all_BOT": "s4all-bot",
-    "NeuralTape": "neuraltape",
+    "MyWorkspace": "myworkspace",
 }
 
 

@@ -2,7 +2,7 @@
 
 **Version:** 0.3 (post-review, post Q2/Q4 resolution)
 **Status:** Approved — In implementazione
-**Author:** Lex per Guglielmo
+**Author:** Lex per the owner
 **Date:** 2026-07-14
 **Language:** Italian (content), English (code/IDs)
 **Depends on:** `_roadmap-v3-review.md` (v0.2), decisioni Q2=C e Q4=C
@@ -33,7 +33,7 @@ sostituisce esplicitamente. Feature flag `NEURALTAPE_V3=1` attiva componenti v3.
 | Q | Decisione |
 |---|-----------|
 | Q1 (confidence) | **D — Combinazione pesata.** `0.5·git_coherence + 0.3·working-set_overlap + 0.2·llm_judge`. Se nessun commit recente (<24h) → `confidence * 0.85` + `confidence_note: "inferred, no recent commit"`. |
-| Q2 (MemPalace) | **C — Ibrido con interface.** NeuralTape implementa working/episodic/semantic nativi. Identity layer = `_Lex/identity.md` + `soul.md` (EterCervo). Backend di consolidamento è un'interfaccia (`ConsolidationBackend`); default SQLite, MemPalace futuro come backend alternativo. |
+| Q2 (MemPalace) | **C — Ibrido con interface.** NeuralTape implementa working/episodic/semantic nativi. Identity layer = profile vault locale (`identity.md` + `soul.md`, host-defined). Backend di consolidamento è un'interfaccia (`ConsolidationBackend`); default SQLite, MemPalace futuro come backend alternativo. |
 | Q3 (Storage) | **Confermato SQLite** via stdlib `sqlite3`. Schema v1 in Fase 0, migrazioni in Fase 1+. |
 | Q4 (Project ID) | **C — Config esplicita.** Ogni progetto ha `.neuraltape/project.yaml` con `project_id` human-readable. Fallback: hash del path root + warning. |
 | Q5 (Trigger focus) | **D — Ibrido.** Idle-trigger (riusa polling v2.2, 10 min) + invalidation immediata su branch switch. Nessuna rigenerazione eager costosa. |
@@ -375,7 +375,7 @@ Tutti devono essere verdi prima di passare a Fase 1.
 ## 6. Cosa Fase 0 **non** fa
 
 - Non chiama LLM (quello è Fase 1, classifier v3).
-- Non scrive in `_Lex/memory.md` (lo farà il nuovo writer in Fase 1).
+- Non scrive nel file di memoria manuale del profilo (lo farà il nuovo writer in Fase 1).
 - Non tocca v22 cron timer.
 - Non espone MCP/REST (Fase 3).
 - Non ha UI.

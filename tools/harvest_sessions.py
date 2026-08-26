@@ -18,8 +18,8 @@ Project roots come from the .neuraltape/project.yaml files under DEFAULT_BASE.
 
 Output: a JSON plan consumable by validate_sessions.py:
     [
-      {"session_id": "...", "transcript_path": "...", "project_id": "etercervo",
-       "project_root": "/run/media/.../EterCervo", "score": {project: count},
+      {"session_id": "...", "transcript_path": "...", "project_id": "myworkspace",
+       "project_root": "/path/to/MyWorkspace", "score": {project: count},
        "bytes": 123456, "mtime_iso": "2026-07-18..."},
       ...
     ]
