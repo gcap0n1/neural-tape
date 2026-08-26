@@ -34,6 +34,25 @@ log = logging.getLogger("neural-tape-v3-bootstrap")
 _DEFAULT_BASE = default_projects_base()
 
 
+def _bootstrap_ids() -> dict[str, str]:
+    """Merged id map: local config.yaml `bootstrap_ids` wins over the
+    neutral built-in example. The local file is machine-specific and is
+    never published."""
+    ids = dict(DEFAULT_BOOTSTRAP_IDS)
+    try:
+        import yaml
+
+        cfg_path = HERE.parent.parent / "config.yaml"
+        if cfg_path.exists():
+            data = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+            extra = data.get("bootstrap_ids") or {}
+            if isinstance(extra, dict):
+                ids.update({str(k): str(v) for k, v in extra.items() if k and v})
+    except Exception as exc:  # never fail the tool over a bad local config
+        log.warning("bootstrap_ids from config.yaml unreadable (%s)", exc)
+    return ids
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Bootstrap .neuraltape/project.yaml files")
     ap.add_argument("--base", default=str(_DEFAULT_BASE),
@@ -62,11 +81,12 @@ def main() -> int:
         overrides[Path(r).expanduser().resolve()] = i.strip()
 
     # Collect target roots.
+    ids = _bootstrap_ids()
     if args.root:
         roots = [Path(r).expanduser().resolve() for r in args.root]
     else:
         base = Path(args.base).expanduser().resolve()
-        roots = [base / name for name in DEFAULT_BOOTSTRAP_IDS.keys()]
+        roots = [base / name for name in ids.keys()]
         roots = [r for r in roots if r.exists()]
 
     if not roots:
@@ -79,7 +99,7 @@ def main() -> int:
     skipped = 0
     for root in roots:
         folder_name = root.name
-        project_id = overrides.get(root) or DEFAULT_BOOTSTRAP_IDS.get(folder_name)
+        project_id = overrides.get(root) or ids.get(folder_name)
         if not project_id:
             log.warning("  %s: no project_id mapping (skipped)", root)
             skipped += 1
