@@ -9,6 +9,7 @@ Two surfaces:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from pathlib import Path
@@ -158,6 +159,22 @@ def build_parser() -> argparse.ArgumentParser:
     h.add_argument("--no-consume", action="store_true",
                    help="stampa senza marcare consumed")
 
+    i = sub.add_parser("install",
+                       help="installa l'hook di iniezione per un agente")
+    i.add_argument("--agent", required=True,
+                   choices=["claude", "kimi", "grok", "opencode", "reasonix"])
+    i.add_argument("--project", required=True)
+    i.add_argument("--db", default=None)
+    i.add_argument("--home", default=None,
+                   help="override della home utente (test)")
+    i.add_argument("--apply", action="store_true",
+                   help="scrive davvero (default: dry-run)")
+    u = sub.add_parser("uninstall", help="rimuove le entry NeuralTape")
+    u.add_argument("--agent", required=True,
+                   choices=["claude", "kimi", "grok", "opencode", "reasonix"])
+    u.add_argument("--home", default=None)
+    u.add_argument("--apply", action="store_true")
+
     return p
 
 
@@ -172,6 +189,14 @@ def main(argv: list[str] | None = None) -> int:
         if ns.command == "query":
             return _cmd_query(storage, ns)
         return _cmd_think(storage, ns)
+    if argv[0] in ("install", "uninstall"):
+        ns = build_parser().parse_args(argv)
+        from .v3.installers import install, uninstall
+        fn = install if ns.command == "install" else uninstall
+        report = fn(ns.agent, project=getattr(ns, "project", None),
+                    db_path=ns.db, home=ns.home, apply=ns.apply)
+        print(json.dumps(report.as_dict(), ensure_ascii=False, indent=2))
+        return 0
     if argv[0] == "serve":
         ns = build_parser().parse_args(argv)
         from .mcp_server import serve as _serve

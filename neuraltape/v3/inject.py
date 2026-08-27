@@ -6,10 +6,15 @@ different injection surface; the contracts here come from the v4 roadmap
 config-file installers are Fase 3 item 3.
 
 Contracts:
-- Kimi  : hook on UserPromptSubmit (Kimi IGNORES SessionStart stdout).
-- Grok  : no shell hook — consumes via the MCP `handoff` tool.
-- Codex : finalize-session surface; the adapter prints the pending bundle
-          with consumer=codex so the next-session handoff gets written.
+- Kimi    : hook on UserPromptSubmit (Kimi IGNORES SessionStart stdout).
+- Grok    : no shell hook — consumes via the MCP `handoff` tool.
+- Codex   : finalize-session surface; prints the pending bundle with
+            consumer=codex so the next-session handoff gets written.
+- Claude  : SessionStart stdout IS honored (agentmemory study) — full
+            installer support via settings.json hooks.
+- opencode: external plugin format — snippet-only.
+- reasonix: settings.json hooks — format not verifiable offline;
+            snippet-only.
 """
 
 from __future__ import annotations
@@ -59,7 +64,35 @@ def codex_plan(project: str, db_path: str) -> InjectionPlan:
     )
 
 
-_AGENTS = {"kimi": kimi_plan, "grok": grok_plan, "codex": codex_plan}
+def claude_plan(project: str, db_path: str) -> InjectionPlan:
+    cmd = (f"neuraltape hook-inject --agent claude --project "
+           f"{_quote(project)} --db {_quote(db_path)}")
+    return InjectionPlan(
+        agent="claude", event="SessionStart", command=cmd,
+        notes="Claude Code onora lo stdout della SessionStart: contesto "
+              "iniettato all'avvio; consumo con consumer=claude.",
+    )
+
+
+def opencode_plan(project: str, db_path: str) -> InjectionPlan:
+    return InjectionPlan(
+        agent="opencode", event="plugin", command=None,
+        notes=("formato plugin esterno: installer emette lo snippet da "
+               "registrare nel config di opencode (nessuna scrittura)."),
+    )
+
+
+def reasonix_plan(project: str, db_path: str) -> InjectionPlan:
+    return InjectionPlan(
+        agent="reasonix", event="settings-hook", command=None,
+        notes=("hook globali in ~/.reasonix/settings.json: formato non "
+               "verificabile offline, installer snippet-only."),
+    )
+
+
+_AGENTS = {"kimi": kimi_plan, "grok": grok_plan, "codex": codex_plan,
+           "claude": claude_plan, "opencode": opencode_plan,
+           "reasonix": reasonix_plan}
 
 
 def plan_for(agent: str, project: str, db_path: str) -> InjectionPlan:

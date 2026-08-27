@@ -59,7 +59,7 @@ def test_injection_plans_match_roadmap_contracts():
 
     raised = False
     try:
-        plan_for("claude", "p1", "x.db")
+        plan_for("agent-inesistente", "p1", "x.db")
     except ValueError:
         raised = True
     assert raised

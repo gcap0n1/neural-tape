@@ -391,43 +391,58 @@ def run_once(
             state_dir=cfg.storage.db_path.parent / ".state",
             fallback_notify_interval_hours=cfg.cost.fallback_notify_interval_hours,
         )
-        factory = classifier_factory or classifier_mod.ClassifierV3
-        classifier_kwargs: dict = {}
-        # When using the real ClassifierV3 (no test factory), mirror every
-        # persisted episode to the v2.2-style markdown archive so that
-        # pre_load.py / session-context.md see v3 output without changes.
-        if classifier_factory is None:
-            classifier_kwargs["archive_root"] = tape_root / "tape" / "archive"
-        classifier = factory(
-            config=cfg,
-            project=project,
-            storage=storage,
-            redactor=redactor,
-            cost_policy=policy,
-            **classifier_kwargs,
-        )
-        try:
-            episodes_written = classifier.classify_and_persist(
-                transcript_text,
-                session_id,
-                project.project_id,
+        zero_llm = os.environ.get("NEURALTAPE_ZERO_LLM", "").strip().lower() \
+            in {"1", "true", "yes"}
+        if zero_llm:
+            # Zero-LLM mode (Fase 3): capture + recall + handoff work without
+            # any API key. The transcript is watermarked as classified with
+            # zero episodes so the cron does not retry it, and the honest
+            # audit trail shows the skip.
+            log.info(
+                "[zero-llm] classification skipped for %s "
+                "(NEURALTAPE_ZERO_LLM active)", session_id,
             )
-        except classifier_mod.ClassificationDeferred:
-            # Budget exhausted: an intentional defer, not a failure. No marker
-            # is written; the session is retried when the budget resets.
-            raise
-        except Exception as error:
-            # Record the failure claim (never a classified marker) so repeated
-            # failures eventually put the session in backoff instead of burning
-            # every tick while e.g. the LLM endpoint is down.
-            storage.append_event(
-                project_id=project.project_id,
-                source_type=FAILED_EVENT,
-                source_ref=session_id,
-                captured_at=time.time(),
-                payload={"error": str(error)[:500]},
+            episodes_written = 0
+        else:
+            factory = classifier_factory or classifier_mod.ClassifierV3
+            classifier_kwargs: dict = {}
+            # When using the real ClassifierV3 (no test factory), mirror every
+            # persisted episode to the v2.2-style markdown archive so that
+            # pre_load.py / session-context.md see v3 output without changes.
+            if classifier_factory is None:
+                classifier_kwargs["archive_root"] = tape_root / "tape" / "archive"
+            classifier = factory(
+                config=cfg,
+                project=project,
+                storage=storage,
+                redactor=redactor,
+                cost_policy=policy,
+                **classifier_kwargs,
             )
-            raise
+            try:
+                episodes_written = classifier.classify_and_persist(
+                    transcript_text,
+                    session_id,
+                    project.project_id,
+                )
+            except classifier_mod.ClassificationDeferred:
+                # Budget exhausted: an intentional defer, not a failure. No
+                # marker is written; the session is retried when the budget
+                # resets.
+                raise
+            except Exception as error:
+                # Record the failure claim (never a classified marker) so
+                # repeated failures eventually put the session in backoff
+                # instead of burning every tick while e.g. the LLM endpoint
+                # is down.
+                storage.append_event(
+                    project_id=project.project_id,
+                    source_type=FAILED_EVENT,
+                    source_ref=session_id,
+                    captured_at=time.time(),
+                    payload={"error": str(error)[:500]},
+                )
+                raise
         # Re-stat after classification in case the transcript grew during the
         # LLM call (active session). We record the post-classification size so
         # the next run only reprocesses if NEW content arrived after this point.
