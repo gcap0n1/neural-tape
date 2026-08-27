@@ -86,8 +86,62 @@ class AgentHandoffBundle:
         md_path = self.output_dir / "agent-handoff.md"
         md_path.write_text(self._render_markdown(bundle), encoding="utf-8")
 
+        # Single-use lifecycle (Fase 3): a fresh generation is a fresh
+        # pending handoff; consumption is recorded, never deleted.
+        self._write_state({
+            "project_id": self.project_id,
+            "generated_at": bundle["generated_at"],
+            "consumed_at": None,
+            "consumer": None,
+        })
+
         log.info("agent-handoff bundle generated: %s, %s", json_path.name, md_path.name)
         return bundle
+
+    # ---- single-use lifecycle (Fase 3) ---------------------------------
+
+    @property
+    def state_path(self) -> Path:
+        return self.output_dir / "handoff-state.json"
+
+    def state(self) -> dict:
+        if self.state_path.exists():
+            try:
+                return json.loads(self.state_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                pass  # corrupt/partial state file -> fall back to pristine
+        return {"project_id": self.project_id, "generated_at": None,
+                "consumed_at": None, "consumer": None}
+
+    def _write_state(self, state: dict) -> None:
+        self.state_path.write_text(
+            json.dumps(state, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+    def pending_markdown(self) -> tuple[str | None, dict]:
+        """Markdown of the pending handoff, or (None, state) if consumed."""
+        st = self.state()
+        if st.get("consumed_at"):
+            return None, st
+        md_path = self.output_dir / "agent-handoff.md"
+        if not md_path.exists():
+            return None, st
+        return md_path.read_text(encoding="utf-8"), st
+
+    def consume(self, consumer: str = "unknown") -> tuple[str, dict]:
+        """Mark the pending handoff as consumed. Raises if already consumed."""
+        md, st = self.pending_markdown()
+        if md is None:
+            raise ValueError(
+                f"no pending handoff for {self.project_id!r} "
+                f"(consumed at {st.get('consumed_at')}) — regenerate first")
+        st.update(
+            consumed_at=datetime.now().astimezone().isoformat(timespec="seconds"),
+            consumer=consumer,
+        )
+        self._write_state(st)
+        return md, st
 
     # ---- data gatherers ------------------------------------------------
 
@@ -237,3 +291,20 @@ class AgentHandoffBundle:
             "",
         ])
         return "\n".join(lines)
+
+
+def build_bundle(storage: "Storage", project_id: str,
+                 project_root: Path, output_dir: Path | None = None
+                 ) -> "AgentHandoffBundle":
+    """Factory wiring GitAdapter+EventBus so MCP/CLI share one construction."""
+    from .adapters.git import GitAdapter
+    from .events import EventBus
+
+    root = Path(project_root).resolve()
+    out = Path(output_dir) if output_dir \
+        else Path(storage.db_path).parent / "projects" / project_id
+    git = GitAdapter(root, EventBus(storage), project_id)
+    return AgentHandoffBundle(
+        storage=storage, git_adapter=git, project_id=project_id,
+        project_root=root, output_dir=out,
+    )

@@ -104,6 +104,25 @@ def _cmd_think(storage: Storage, ns) -> int:
     return 0
 
 
+def _cmd_hook_inject(ns) -> int:
+    """Print the pending handoff markdown; consume it unless --no-consume."""
+    from .v3.handoff import build_bundle
+
+    storage = _open_storage(ns)
+    bundle = build_bundle(storage, ns.project, Path.cwd())
+    if ns.regenerate or not (bundle.output_dir / "agent-handoff.md").exists():
+        bundle.generate()
+    md, state = bundle.pending_markdown()
+    if md is None:
+        print(f"[hook-inject] no pending handoff for {ns.project!r} "
+              f"(consumed at {state.get('consumed_at')})", file=sys.stderr)
+        return 1
+    if not ns.no_consume:
+        _, state = bundle.consume(consumer=ns.agent)
+    sys.stdout.write(md + "\n")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="neuraltape",
@@ -128,6 +147,17 @@ def build_parser() -> argparse.ArgumentParser:
     sv.add_argument("--db", default=None, help="percorso neuraltape.db")
     sv.add_argument("--project-root", default=None)
 
+    h = sub.add_parser("hook-inject",
+                       help="stampa l'handoff pending (single-use) per un hook")
+    h.add_argument("--agent", required=True, choices=["kimi", "codex"],
+                   help="consumer label (kimi/codex; grok usa MCP)")
+    h.add_argument("--project", required=True)
+    h.add_argument("--db", default=None)
+    h.add_argument("--regenerate", action="store_true",
+                   help="rigenera un bundle pending prima dell'iniezione")
+    h.add_argument("--no-consume", action="store_true",
+                   help="stampa senza marcare consumed")
+
     return p
 
 
@@ -146,6 +176,9 @@ def main(argv: list[str] | None = None) -> int:
         ns = build_parser().parse_args(argv)
         from .mcp_server import serve as _serve
         return _serve(_resolve_db(ns), ns.project_root)
+    if argv[0] == "hook-inject":
+        ns = build_parser().parse_args(argv)
+        return _cmd_hook_inject(ns)
 
     # Everything else (--selfcheck / --status / --once / -h) belongs to the
     # legacy pipeline surface, preserved verbatim.

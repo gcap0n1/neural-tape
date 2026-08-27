@@ -107,14 +107,19 @@ TOOLS: list[dict] = [
     },
     {
         "name": "handoff",
-        "description": ("Generate the single-source agent handoff bundle "
-                        "(JSON + markdown) for a project and return the "
-                        "artifact paths plus a summary."),
+        "description": ("Agent handoff bundle lifecycle. Default: generate a "
+                        "fresh PENDING bundle (non-consuming read of "
+                        "artifacts). consume=true: return the pending "
+                        "markdown and mark it consumed (single-use; error "
+                        "if already consumed). regenerate=true: force a "
+                        "fresh pending bundle first."),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "project": {"type": "string"},
                 "project_root": {"type": ["string", "null"]},
+                "consume": {"type": "boolean"},
+                "regenerate": {"type": "boolean"},
             },
             "required": ["project"],
         },
@@ -303,26 +308,29 @@ class McpServer:
         return {"episode_id": eid, "forgotten": True, **state}
 
     def _verb_handoff(self, a: dict) -> dict:
-        from .v3.adapters.git import GitAdapter
-        from .v3.events import EventBus
-        from .v3.handoff import AgentHandoffBundle
+        from .v3.handoff import build_bundle
 
         project = a["project"]
         project_root = Path(a.get("project_root") or self.default_project_root)
         storage = self.storage()
-        git = GitAdapter(project_root, EventBus(storage), project)
-        output_dir = self.db_path.parent / "projects" / project
-        bundle = AgentHandoffBundle(
-            storage=storage, git_adapter=git, project_id=project,
-            project_root=project_root, output_dir=output_dir,
-        )
-        data = bundle.generate()
+        bundle = build_bundle(storage, project, project_root,
+                              self.db_path.parent / "projects" / project)
+
+        if a.get("regenerate") or not (bundle.output_dir / "agent-handoff.md").exists():
+            bundle.generate()
+
+        artifacts = {
+            "json": str(bundle.output_dir / "agent-handoff.json"),
+            "markdown": str(bundle.output_dir / "agent-handoff.md"),
+        }
+        if a.get("consume"):
+            md, state = bundle.consume(consumer="mcp")
+            return {"project": project, "consumed": True,
+                    "state": state, "markdown": md, "artifacts": artifacts}
+        state = bundle.state()
         return {"project": project,
-                "artifacts": {
-                    "json": str(output_dir / "agent-handoff.json"),
-                    "markdown": str(output_dir / "agent-handoff.md"),
-                },
-                "counts": data.get("episodes", {}) if isinstance(data, dict) else {}}
+                "consumed": bool(state.get("consumed_at")),
+                "state": state, "artifacts": artifacts}
 
 
 def serve(db_path: Path, project_root: Path | None = None) -> int:
