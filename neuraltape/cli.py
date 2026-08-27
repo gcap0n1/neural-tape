@@ -124,6 +124,10 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument("--limit", type=int, default=6)
     t.add_argument("--db", default=None)
 
+    sv = sub.add_parser("serve", help="server MCP stdio con i sei verbi frozen")
+    sv.add_argument("--db", default=None, help="percorso neuraltape.db")
+    sv.add_argument("--project-root", default=None)
+
     return p
 
 
@@ -138,6 +142,10 @@ def main(argv: list[str] | None = None) -> int:
         if ns.command == "query":
             return _cmd_query(storage, ns)
         return _cmd_think(storage, ns)
+    if argv[0] == "serve":
+        ns = build_parser().parse_args(argv)
+        from .mcp_server import serve as _serve
+        return _serve(_resolve_db(ns), ns.project_root)
 
     # Everything else (--selfcheck / --status / --once / -h) belongs to the
     # legacy pipeline surface, preserved verbatim.
