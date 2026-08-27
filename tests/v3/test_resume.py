@@ -1,4 +1,4 @@
-"""Test per lex/v3/resume.py — Resume Project renderer."""
+"""Test per neuraltape/v3/resume.py — Resume Project renderer."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ NT_ROOT = Path(__file__).resolve().parents[2]
 if str(NT_ROOT) not in sys.path:
     sys.path.insert(0, str(NT_ROOT))
 
-from lex.v3.resume import ResumeProjectRenderer
-from lex.v3.storage import Episode, Storage
+from neuraltape.v3.resume import ResumeProjectRenderer
+from neuraltape.v3.storage import Episode, Storage
 from unittest.mock import MagicMock
 
 

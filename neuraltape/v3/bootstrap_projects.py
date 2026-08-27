@@ -3,10 +3,10 @@
 
 Una tantum script (Fase 0 setup, Q4=C). Run:
 
-    python lex/v3/bootstrap_projects.py                 # use default paths
-    python lex/v3/bootstrap_projects.py --dry-run       # preview, no writes
-    python lex/v3/bootstrap_projects.py --force         # overwrite existing
-    python lex/v3/bootstrap_projects.py --root /path --id custom-id
+    python neuraltape/v3/bootstrap_projects.py                 # use default paths
+    python neuraltape/v3/bootstrap_projects.py --dry-run       # preview, no writes
+    python neuraltape/v3/bootstrap_projects.py --force         # overwrite existing
+    python neuraltape/v3/bootstrap_projects.py --root /path --id custom-id
 
 The script is idempotent: refuses to overwrite an existing config unless --force.
 """

@@ -1,4 +1,4 @@
-"""Test per lex/v3/storage.py (D0.3)."""
+"""Test per neuraltape/v3/storage.py (D0.3)."""
 
 from __future__ import annotations
 
@@ -7,9 +7,14 @@ import tempfile
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from storage import Episode, Storage, episode_dedup_key  # type: ignore[import-not-found]
+from neuraltape.v3.storage import (
+    SCHEMA_VERSION,
+    Episode,
+    Storage,
+    episode_dedup_key,  # type: ignore[import-not-found]
+)
 
 
 def _fresh_db() -> Storage:
@@ -133,7 +138,7 @@ def test_schema_version_recorded():
     with sqlite3.connect(s.db_path) as c:
         row = c.execute("SELECT version FROM schema_version").fetchone()
     assert row is not None
-    assert row[0] == 2
+    assert row[0] == SCHEMA_VERSION
 
 
 def test_v1_database_migrates_to_v2():
@@ -170,7 +175,7 @@ def test_v1_database_migrates_to_v2():
         version = c.execute("SELECT version FROM schema_version").fetchone()[0]
         cols = {r[1] for r in c.execute("PRAGMA table_info(episodes)")}
         count = c.execute("SELECT COUNT(*) FROM episodes").fetchone()[0]
-    assert version == 2
+    assert version == SCHEMA_VERSION
     assert "dedup_key" in cols
     assert count == 1
     legacy = s2.get_episode("legacy-1")
@@ -224,7 +229,7 @@ def test_legacy_db_without_schema_version_migrates():
         version = c.execute("SELECT version FROM schema_version").fetchone()[0]
         cols = {r[1] for r in c.execute("PRAGMA table_info(episodes)")}
         key = c.execute("SELECT dedup_key FROM episodes WHERE id = 'legacy-1'").fetchone()[0]
-    assert version == 2
+    assert version == SCHEMA_VERSION
     assert "dedup_key" in cols
     assert key == episode_dedup_key("Legacy Title", "legacy body")
     assert s.has_episode_by_dedup("p", key)

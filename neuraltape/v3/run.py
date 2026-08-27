@@ -11,9 +11,9 @@ v3 is the live pipeline since 2026-07-20: `neural-tape-v3.timer` invokes
 v2.2 (`neural-tape-v22.timer`) is disabled since 2026-07-20; rollback only.
 
 Usage:
-    python lex/v3/run.py --selfcheck
-    NEURALTAPE_V3=1 python lex/v3/run.py --status
-    NEURALTAPE_V3=1 python lex/v3/run.py --once <session> --project-root <path>
+    python neuraltape/v3/run.py --selfcheck
+    NEURALTAPE_V3=1 python neuraltape/v3/run.py --status
+    NEURALTAPE_V3=1 python neuraltape/v3/run.py --once <session> --project-root <path>
 """
 
 from __future__ import annotations
@@ -29,10 +29,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Protocol
 
-THIS_DIR = Path(__file__).resolve().parent          # lex/v3/
+THIS_DIR = Path(__file__).resolve().parent          # neuraltape/v3/
 TAPE_ROOT = THIS_DIR.parent.parent                  # NeuralTape/
 
-# Ensure lex/v3/ is importable for modules loaded via _load_from_path
+# Ensure neuraltape/v3/ is importable for modules loaded via _load_from_path
 # (git.py uses `from events import Event` at runtime).
 if str(THIS_DIR) not in sys.path:
     sys.path.insert(0, str(THIS_DIR))
@@ -90,7 +90,7 @@ class ClassifierProtocol(Protocol):
 
 
 def _load_sibling(name: str):
-    """Load a sibling module of this file (lex/v3/<name>.py)."""
+    """Load a sibling module of this file (neuraltape/v3/<name>.py)."""
     return _load_from_path(f"nt_v3.{name}", THIS_DIR / f"{name}.py")
 
 

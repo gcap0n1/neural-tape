@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """validate_sessions — run v3 classifier on N historical sessions, collect metrics.
 
-Reads a harvest plan (from harvest_sessions.py) and runs lex/v3/run.py:run_once
+Reads a harvest plan (from harvest_sessions.py) and runs neuraltape/v3/run.py:run_once
 on each entry, then aggregates:
 
     - episodes_written per session / per project
@@ -34,9 +34,9 @@ from pathlib import Path
 NT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(NT_ROOT))
 
-from lex.v3.run import run_once  # noqa: E402
-from lex.v3 import storage as storage_mod  # noqa: E402
-from lex.v3 import config as config_mod  # noqa: E402
+from neuraltape.v3.run import run_once  # noqa: E402
+from neuraltape.v3 import storage as storage_mod  # noqa: E402
+from neuraltape.v3 import config as config_mod  # noqa: E402
 
 
 log = logging.getLogger("nt-v3-validate")

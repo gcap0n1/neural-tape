@@ -1,4 +1,4 @@
-"""Test per lex/v3/events.py (D0.4)."""
+"""Test per neuraltape/v3/events.py (D0.4)."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ import tempfile
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from events import ACTIVE_SOURCES_PHASE0, Event, EventBus  # type: ignore[import-not-found]
-from storage import Storage  # type: ignore[import-not-found]
+from neuraltape.v3.events import ACTIVE_SOURCES_PHASE0, Event, EventBus  # type: ignore[import-not-found]
+from neuraltape.v3.storage import Storage  # type: ignore[import-not-found]
 
 
 def _bus() -> tuple[EventBus, Storage]:

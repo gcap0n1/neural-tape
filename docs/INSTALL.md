@@ -55,7 +55,7 @@ Install and enable the 5-minute timer:
 
 ```bash
 mkdir -p ~/.config/systemd/user
-cp lex/v3/neural-tape-v3.{service,timer} ~/.config/systemd/user/
+cp neuraltape/v3/neural-tape-v3.{service,timer} ~/.config/systemd/user/
 # adapt paths inside the .service file to your checkout
 systemctl --user daemon-reload
 systemctl --user enable --now neural-tape-v3.timer

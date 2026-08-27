@@ -1,4 +1,4 @@
-"""Test per lex/v3/adapters/git.py (D1.3).
+"""Test per neuraltape/v3/adapters/git.py (D1.3).
 
 Uses a temporary git repository to test git operations without polluting
 the real workspace.
@@ -14,12 +14,11 @@ import tempfile
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
 
 # Suppress logging noise during tests
 logging.disable(logging.CRITICAL)
 
-from adapters.git import GitAdapter, GitCommitEvent  # type: ignore[import-not-found]
+from neuraltape.v3.adapters.git import GitAdapter, GitCommitEvent
 
 
 def _init_git_repo(path: Path) -> Path:

@@ -1,4 +1,4 @@
-"""Test per lex/v3/focus.py (D1.4)."""
+"""Test per neuraltape/v3/focus.py (D1.4)."""
 
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ import tempfile
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 logging.disable(logging.CRITICAL)
 
-from focus import CurrentFocus, FocusGenerator  # type: ignore[import-not-found]
-from storage import Episode, Storage  # type: ignore[import-not-found]
+from neuraltape.v3.focus import CurrentFocus, FocusGenerator  # type: ignore[import-not-found]
+from neuraltape.v3.storage import Episode, Storage  # type: ignore[import-not-found]
 
 
 def _stub_git_adapter():

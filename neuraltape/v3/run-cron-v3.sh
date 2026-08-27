@@ -53,8 +53,8 @@ except (json.JSONDecodeError, IndexError, subprocess.SubprocessError):
 # Collect candidate transcripts across VS Code Copilot and Codex stores.
 candidates = []
 now = time.time()
-from lex.v3.transcript_watcher import TranscriptWatcher
-from lex.v3.config import load as _load_v3_config
+from neuraltape.v3.transcript_watcher import TranscriptWatcher
+from neuraltape.v3.config import load as _load_v3_config
 
 _cfg = _load_v3_config(tape_root)
 watcher = TranscriptWatcher(
@@ -83,7 +83,7 @@ print(f"[v3-cron] {len(candidates)} candidate(s)")
 
 sys.path.insert(0, str(tape_root))
 os.environ["NEURALTAPE_V3"] = "1"
-from lex.v3.run import run_once
+from neuraltape.v3.run import run_once
 
 total_eps = 0
 processed = 0

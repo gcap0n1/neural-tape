@@ -6,9 +6,22 @@ Generates session-context.md before AI assistant session starts.
 
 import re
 import argparse
+import sys
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+
+# Import the shipped pipeline straight from this checkout.
+_ROOT = Path(__file__).resolve().parent.parent  # NeuralTape repo root
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from neuraltape.v3.markdown_export import (  # noqa: E402
+    _archive_subdir,
+    _confidence_label,
+    _slugify,
+)
+from neuraltape.v3.storage import Storage  # noqa: E402
 
 try:
     import yaml
@@ -38,81 +51,6 @@ def is_below_threshold(strength: float, threshold: float = 0.1) -> bool:
     return strength <= threshold
 
 
-# ── BM25 Search (ported from agentmemory ranking) ─────────────────────
-
-def _tokenize(text: str) -> List[str]:
-    """Simple whitespace + lowercasing tokenizer."""
-    return re.findall(r'\w+', text.lower())
-
-
-def bm25_score(query_tokens: List[str], doc_tokens: List[str],
-               avg_dl: float, k1: float = 1.5, b: float = 0.75) -> float:
-    """Compute BM25 score for a single document.
-    
-    Pure Python, no external deps. Ported from agentmemory ranking logic.
-    """
-    dl = len(doc_tokens)
-    if dl == 0 or not query_tokens:
-        return 0.0
-
-    # Term frequency map
-    tf = {}
-    for t in doc_tokens:
-        tf[t] = tf.get(t, 0) + 1
-
-    score = 0.0
-    for qt in query_tokens:
-        if qt not in tf:
-            continue
-        term_tf = tf[qt]
-        numerator = term_tf * (k1 + 1)
-        denominator = term_tf + k1 * (1 - b + b * (dl / avg_dl))
-        score += numerator / denominator
-    return score
-
-
-class BM25Ranker:
-    """BM25 ranker for insight retrieval. No external deps."""
-
-    def __init__(self, k1: float = 1.5, b: float = 0.75):
-        self.k1 = k1
-        self.b = b
-        self.docs: List[Dict] = []
-        self.doc_tokens: List[List[str]] = []
-        self.avg_dl: float = 0.0
-
-    def index(self, documents: List[Dict], text_key: str = "content"):
-        """Index documents for ranking. text_key specifies which field to search."""
-        self.docs = documents
-        self.doc_tokens = []
-        total_len = 0
-        for doc in documents:
-            text = doc.get(text_key, "") + " " + doc.get("type", "")
-            tokens = _tokenize(text)
-            self.doc_tokens.append(tokens)
-            total_len += len(tokens)
-        self.avg_dl = total_len / max(len(documents), 1)
-
-    def search(self, query: str, top_k: int = 10) -> List[Dict]:
-        """Search indexed documents. Returns top_k results with BM25 scores."""
-        if not self.docs:
-            return []
-
-        query_tokens = _tokenize(query)
-        if not query_tokens:
-            return self.docs[:top_k]
-
-        scored = []
-        for i, doc in enumerate(self.docs):
-            score = bm25_score(query_tokens, self.doc_tokens[i],
-                               self.avg_dl, self.k1, self.b)
-            # Blend BM25 with decay strength (70% BM25, 30% decay)
-            decay_score = doc.get("strength", 0.5)
-            blended = 0.7 * score + 0.3 * decay_score
-            scored.append((blended, doc))
-
-        scored.sort(key=lambda x: x[0], reverse=True)
-        return [doc for _, doc in scored[:top_k]]
 
 
 class Config:
@@ -123,9 +61,6 @@ class Config:
         self.pre_load = self.raw.get("pre_load", {})
         self.deja_vu = self.raw.get("deja_vu", {})
 
-    def get_archive_dir(self) -> Path:
-        root = self.paths.get("neural_tape_root", ".")
-        return Path(root) / "tape" / "archive"
 
     def get_wiki_dir(self) -> Optional[Path]:
         p = self.paths.get("etercervo_wiki", "")
@@ -139,13 +74,17 @@ class Config:
         root = self.paths.get("neural_tape_root", ".")
         return Path(root) / "session-context.md"
 
+    def get_db_path(self) -> Path:
+        root = self.paths.get("neural_tape_root", ".")
+        return Path(root) / "tape" / "v3" / "neuraltape.db"
+
 
 class PreLoad:
     """Generate session context for AI assistant startup."""
 
     def __init__(self, config: Config):
         self.config = config
-        self.archive_dir = config.get_archive_dir()
+        self.db_path = config.get_db_path()
         self.wiki_dir = config.get_wiki_dir()
         self.lex_memory = config.get_lex_memory()
         self.output_path = config.get_output_path()
@@ -169,157 +108,102 @@ class PreLoad:
                 pass
         return "unknown"
 
-    @staticmethod
-    def _normalize_project_name(workspace_or_project: str) -> str:
-        """Normalize a workspace label into a project name.
 
-        Accepts both legacy labels ('MyWorkspace.code-workspace') and already
-        normalized values ('MyWorkspace'). Strips common VS Code suffixes.
-        """
-        if not workspace_or_project:
-            return "default"
-        name = str(workspace_or_project)
-        for suffix in ("-Workspace.code-workspace", ".code-workspace", ".code.json"):
-            if name.endswith(suffix):
-                name = name[: -len(suffix)]
-                break
-        return name or "default"
-
-    @staticmethod
-    def _parse_timestamp(frontmatter: Dict[str, Any]) -> Optional[datetime]:
-        """Parse a robust timestamp from frontmatter.
-
-        Priority: 'timestamp' (ISO-8601) -> 'date' (YYYY-MM-DD at midnight) -> None.
-        Tolerates 'Z' suffix, missing timezone, and date-only strings.
-        """
-        ts_raw = frontmatter.get("timestamp", "")
-        if isinstance(ts_raw, datetime):
-            return ts_raw.astimezone() if ts_raw.tzinfo else ts_raw.replace(tzinfo=None)
-        ts_str = str(ts_raw or "").strip()
-
-        if ts_str:
-            try:
-                parsed = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                return parsed if parsed.tzinfo else parsed.replace(tzinfo=None)
-            except ValueError:
-                pass
-
-        date_raw = frontmatter.get("date", "")
-        date_str = str(date_raw or "").strip()
-        if date_str:
-            for fmt in ("%Y-%m-%d", "%Y/%m/%d"):
-                try:
-                    return datetime.strptime(date_str, fmt)
-                except ValueError:
-                    continue
-        return None
 
     def _read_insights(self, project: str, lookback_days: int, assistant: str = None) -> List[Dict]:
-        """Read archive insights filtered by project, recency, confidence, and decay.
+        """Read insights straight from the v3 SQLite DB (recall era).
 
-        Reads from archive/{category}/ (current structure, fixed from old {assistant}/{category}/).
-        Applies Ebbinghaus decay: old insights rank lower and are auto-forged below threshold.
-
-        Schema (standardized 2026-07-18):
-          Required:  type, date|timestamp
-          Optional:  project, workspace, confidence, assistant, session, status, source
-        Backward-compatible: missing fields get sensible defaults so legacy v2.2
-        archives written before standardization still rank and surface.
+        Replaces the markdown mirror scan: one indexed source of truth,
+        ``kind``/confidence floats preserved end-to-end. Confidence labels are
+        derived exactly like markdown_export so mirror pages and context agree;
+        ``low`` insights are dropped, decay auto-forgets below threshold, and
+        project matching stays case-insensitive ('default' sees everything).
         """
+        if not self.db_path.exists():
+            raise SystemExit(
+                f"[pre_load] NeuralTape v3 DB non trovata: {self.db_path}\n"
+                "Attiva la pipeline v3 (neural-tape-v3.timer) o verifica paths.neural_tape_root."
+            )
+
+        storage = Storage(self.db_path)
+        # Fetch across ALL projects inside the window and match case-insensitively
+        # below: episode ids are lowercase-ish ('neuraltape') while the caller may
+        # pass a cwd-derived label ('NeuralTape'). SQL-level equality would break
+        # that historical contract.
+        cutoff_epoch = (datetime.now().astimezone() - timedelta(days=lookback_days)).timestamp()
+        episodes = storage.query_episodes(None, since=cutoff_epoch, limit=5000)
+
         insights: List[Dict] = []
-        cutoff = datetime.now().astimezone() - timedelta(days=lookback_days)
+        for ep in episodes:
+            if project != "default" and str(ep.project_id).lower() != project.lower():
+                continue  # defensive case-insensitive match on top of SQL equality
 
-        if not self.archive_dir.exists():
-            return insights
+            label = _confidence_label(ep.confidence or 0.0)
+            if label == "low":
+                continue
 
-        # Read from archive/{category}/ (current structure, single tier)
-        category_dirs = [d for d in self.archive_dir.iterdir() if d.is_dir() and d.name != "index"]
+            ts_dt = datetime.fromtimestamp(ep.created_at).astimezone()
+            ts_str = ts_dt.isoformat()
+            strength = decay_strength(ts_str)
+            if is_below_threshold(strength):
+                continue  # Auto-forget below threshold
 
-        for category_dir in category_dirs:
-            for fpath in category_dir.glob("*.md"):
-                try:
-                    text = fpath.read_text(encoding="utf-8")
-                    frontmatter = self._extract_frontmatter(text)
+            payload = ep.raw_payload if isinstance(ep.raw_payload, dict) else {}
+            persona = str(payload.get("assistant") or "lex")
 
-                    ts = self._parse_timestamp(frontmatter)
-                    if ts is None:
-                        continue  # Unparseable: skip silently (don't pollute ranking)
-                    ts_aware = ts if ts.tzinfo else ts.replace(tzinfo=datetime.now().astimezone().tzinfo)
-                    if ts_aware < cutoff:
-                        continue
+            if assistant and persona.lower() != assistant.lower():
+                continue
 
-                    confidence = str(frontmatter.get("confidence", "") or "medium").lower()
-                    if confidence == "low":
-                        continue
+            date_str = ts_dt.strftime("%Y-%m-%d")
+            fname = f"{date_str}-{ep.id[:8]}-{_slugify(ep.title or '')}.md"
+            rel_dir = _archive_subdir(ep.category or "neutral")
 
-                    # Decay + auto-forget (ported from agentmemory)
-                    ts_str = ts.isoformat()
-                    strength = decay_strength(ts_str)
-                    if is_below_threshold(strength):
-                        continue  # Auto-forget: skip insights below threshold
+            insights.append({
+                "id": ep.id,
+                "file": f"tape/archive/{rel_dir}/{fname}",
+                "type": ep.category or "meta",
+                "timestamp": ts_str,
+                "confidence": label,
+                "content": ep.title or (ep.body or "")[:60] or ep.id,
+                "project": ep.project_id,
+                "assistant": persona,
+                "strength": round(strength, 3),  # Decay-aware ranking key
+                "pinned": bool(ep.pinned),
+            })
 
-                    # Project resolution: 'project' field -> 'workspace' (normalized) -> 'default'
-                    proj_raw = frontmatter.get("project")
-                    if proj_raw:
-                        proj = str(proj_raw)
-                    else:
-                        workspace = frontmatter.get("workspace", "")
-                        proj = self._normalize_project_name(workspace) if workspace else "default"
-
-                    if project != "default" and proj.lower() != project.lower():
-                        continue
-
-                    if assistant:
-                        ins_assistant = str(frontmatter.get("assistant", "") or "lex").lower()
-                        if ins_assistant != assistant.lower():
-                            continue
-
-                    insights.append({
-                        "file": str(fpath.relative_to(self.archive_dir.parent)),
-                        "type": frontmatter.get("type", "meta"),
-                        "timestamp": ts_str,
-                        "confidence": confidence,
-                        "content": self._extract_title(text) or frontmatter.get("trigger", "") or fpath.stem,
-                        "project": proj,
-                        "assistant": str(frontmatter.get("assistant", "") or "lex"),
-                        "strength": round(strength, 3),  # Decay-aware ranking key
-                    })
-                except Exception:
-                    continue
-
-        # Sort: strength (decay-aware) first, then recency, then confidence
-        insights.sort(key=lambda x: (x.get("strength", 0), x["timestamp"], x["confidence"] == "high"), reverse=True)
+        # Sort: pinned authority first, then decay-aware strength, recency,
+        # confidence.
+        insights.sort(key=lambda x: (x["pinned"], x["strength"], x["timestamp"],
+                                     x["confidence"] == "high"), reverse=True)
         return insights
 
     def _rank_insights(self, insights: List[Dict], query: str = None, top_k: int = 10) -> List[Dict]:
-        """Rank insights using BM25 if query provided, otherwise use decay-based sort.
-        
-        When query is given: 70% BM25 relevance + 30% decay strength.
-        When no query: pure decay-based ranking (existing behavior).
+        """Rank insights via FTS5 BM blended with decay strength (70% / 30%).
+
+        Candidates come from ``Storage.search`` (syntax-safe match expression).
+        Episodes that hit no term are excluded from the ranked set; if nothing
+        matches, fall back to the decay-based order so the morning context
+        never comes back empty.
         """
         if not query or not insights:
             return insights[:top_k]
-
-        ranker = BM25Ranker()
-        ranker.index(insights, text_key="content")
-        return ranker.search(query, top_k=top_k)
-
-    def _extract_frontmatter(self, text: str) -> Dict[str, Any]:
-        """Extract YAML frontmatter from markdown."""
-        if not text.startswith("---"):
-            return {}
-        parts = text.split("---", 2)
-        if len(parts) < 3:
-            return {}
         try:
-            return yaml.safe_load(parts[1]) or {}
-        except Exception:
-            return {}
+            hits = Storage(self.config.get_db_path()).search(query, limit=top_k * 6)
+        except ValueError:
+            return insights[:top_k]
+        rank_by_id = {h.episode.id: h.rank for h in hits}
+        matched = [i for i in insights if i["id"] in rank_by_id]
+        if not matched:
+            return insights[:top_k]
+        ranks = [rank_by_id[i["id"]] for i in matched]
+        rmin, rmax = min(ranks), max(ranks)
+        span = (rmax - rmin) or 1.0
+        for i in matched:
+            norm = (rank_by_id[i["id"]] - rmin) / span
+            i["score"] = round(0.7 * (1.0 - norm) + 0.3 * i["strength"], 4)
+        matched.sort(key=lambda x: x["score"], reverse=True)
+        return matched[:top_k]
 
-    def _extract_title(self, text: str) -> Optional[str]:
-        """Extract first H1 from markdown body."""
-        m = re.search(r"^# (.+)$", text, re.MULTILINE)
-        return m.group(1) if m else None
 
     def _detect_patterns(self, insights: List[Dict], min_occurrences: int = 2) -> List[Dict]:
         """Detect recurring patterns by type + content similarity."""
@@ -355,7 +239,7 @@ class PreLoad:
     def generate(self, project: str = None, branch: str = None, query: str = None) -> Path:
         """Generate session-context.md.
         
-        If query is provided, BM25 ranking is used (70% relevance + 30% decay).
+        If query is provided, FTS5 BM25 ranking is used (70% relevance + 30% decay).
         Otherwise, pure decay-based ranking is used.
         """
         project = project or self._detect_project()
@@ -371,11 +255,18 @@ class PreLoad:
         # Use BM25 ranking if query provided, otherwise decay-based
         if query:
             insights = self._rank_insights(all_insights, query=query, top_k=max_insights)
-            ranking_method = "BM25 + decay"
+            ranking_method = "FTS5 BM25 + decay"
         else:
             insights = all_insights[:max_insights]
             ranking_method = "decay-based"
         patterns = self._detect_patterns(insights)[:max_patterns]
+
+        # Reinforce what the context actually surfaces (usage counters).
+        try:
+            Storage(self.config.get_db_path()).touch_access(
+                [i["id"] for i in insights])
+        except Exception as exc:  # non-fatal: context must never hard-fail
+            print(f"[NeuralTape] touch_access skipped: {exc}")
 
         # Build context file
         query_info = f" (query: {query})" if query else ""

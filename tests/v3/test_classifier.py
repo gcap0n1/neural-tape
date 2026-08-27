@@ -1,4 +1,4 @@
-"""Test per lex/v3/classifier.py (D1.1)."""
+"""Test per neuraltape/v3/classifier.py (D1.1)."""
 
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ _FAKE_CONFIG = SimpleNamespace(
     persona=SimpleNamespace(assistant="assistant", user="user"),
 )
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from classifier import (  # type: ignore[import-not-found]
+from neuraltape.v3.classifier import (  # type: ignore[import-not-found]
     CLASSIFIER_PROMPT,
     ClassificationError,
     ClassifierInsight,

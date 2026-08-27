@@ -22,24 +22,22 @@ from pathlib import Path
 log = logging.getLogger("nt-v3-tests")
 
 HERE = Path(__file__).resolve().parent
-LEX_V3_DIR = HERE.parent.parent / "lex" / "v3"
-
+V3_DIR = HERE.parent.parent / "neuraltape" / "v3"
 
 def _load_test_module(name: str):
-    """Load a test_*.py module with lex/v3 importable as package."""
-    # Make 'lex.v3' importable. We add NeuralTape/ root to sys.path and inject
-    # lex as a namespace package.
-    nt_root = LEX_V3_DIR.parent.parent
+    """Load a test_*.py module with neuraltape/v3 importable as package."""
+    # Make 'neuraltape.v3' (and the short alias below) importable from the
+    # checkout without installing anything.
+    nt_root = V3_DIR.parent.parent
     if str(nt_root) not in sys.path:
         sys.path.insert(0, str(nt_root))
-    # Ensure 'lex' is importable even though NeuralTape has a hyphen-free path
-    # (NeuralTape/ folder itself — we import from inside it).
-    # Strategy: register lex/v3 as top-level module 'nt_v3' for test files.
+    # Tests may import the pipeline as 'nt_v3.<module>' — register a synthetic
+    # package alias pointing at neuraltape/v3.
     if "nt_v3" not in sys.modules:
-        # Build a synthetic package pointing at lex/v3.
+        # Build a synthetic package pointing at neuraltape/v3.
         import types
         pkg = types.ModuleType("nt_v3")
-        pkg.__path__ = [str(LEX_V3_DIR)]
+        pkg.__path__ = [str(V3_DIR)]
         sys.modules["nt_v3"] = pkg
     spec = importlib.util.spec_from_file_location(f"nt_v3_tests.{name}", HERE / f"{name}.py")
     mod = importlib.util.module_from_spec(spec)

@@ -39,7 +39,7 @@ neuraltape --once <session-id> --project-root /path/to/project
 ```
 
 On Linux, run the idle-check loop with the shipped systemd user unit
-(`lex/v3/neural-tape-v3.timer`, every 5 minutes). See `docs/INSTALL.md`.
+(`neuraltape/v3/neural-tape-v3.timer`, every 5 minutes). See `docs/INSTALL.md`.
 
 ## Supported sources
 
@@ -52,7 +52,7 @@ On Linux, run the idle-check loop with the shipped systemd user unit
 | DeepSeek Reasonix | `~/.reasonix/projects/<enc-cwd>/sessions/*.jsonl` | `.events`/`.conflicts` sidecars skipped |
 | Oh My Pi | `~/.omp/agent/sessions/<enc-cwd>/<session>.jsonl` | session cwd label, tool outputs excluded |
 
-Sources are **data-driven manifests** in `lex/v3/transcript_sources.py`.
+Sources are **data-driven manifests** in `neuraltape/v3/transcript_sources.py`.
 Add an agent of your own by writing a `v3.sources.custom.<id>` entry in
 `config.yaml` — no code changes needed. Disable built-ins via
 `v3.sources.disabled`. Bases are overridable via `NEURALTAPE_<ID>_HOME`

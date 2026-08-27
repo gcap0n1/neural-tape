@@ -15,7 +15,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -27,4 +26,4 @@ classifiers = [
 neuraltape = "neuraltape.cli:main"
 
 [tool.setuptools]
-packages = ["neuraltape", "lex", "lex.v3", "lex.v3.adapters", "lex.v22"]
+packages = ["neuraltape", "neuraltape.v3", "neuraltape.v3.adapters"]

@@ -71,7 +71,7 @@ graph TD
 ## 2. Module layout
 
 ```
-lex/v3/
+neuraltape/v3/
 ├── __init__.py
 ├── config.py            ← Fase 0
 ├── project.py           ← Fase 0
@@ -457,7 +457,7 @@ quell'ambiente).
 
 La v3 dispone ora di un percorso manuale end-to-end, senza sostituire il timer v2.2:
 
-- `lex/v3/run.py --once <session> --project-root <path>` risolve solo ID esatti o
+- `neuraltape/v3/run.py --once <session> --project-root <path>` risolve solo ID esatti o
     prefissi univoci e richiede attribuzione esplicita del progetto.
 - La classificazione e' idempotente tramite marker `transcript.classified` in
     `event_log`; una seconda run non richiama l'LLM e rigenera solo focus/workset.

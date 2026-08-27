@@ -1,7 +1,7 @@
 """Discover recent transcripts produced by any registered assistant source.
 
 Discovery is data-driven: every supported agent is described by a
-SourceManifest in lex/v3/transcript_sources.py.  This module keeps the
+SourceManifest in neuraltape/v3/transcript_sources.py.  This module keeps the
 stable public API used by the cron tick, backfill, harvest and resume
 tools, delegating strategy questions to a SourceRegistry.
 """

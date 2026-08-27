@@ -44,7 +44,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from lex.v3.project import default_projects_base  # noqa: E402
+from neuraltape.v3.project import default_projects_base  # noqa: E402
 
 # Same default base as bootstrap_projects.py (env / external disk / $HOME).
 DEFAULT_BASE = default_projects_base()
@@ -84,7 +84,7 @@ def extract_text_from_transcript(path: Path, max_bytes: int = 4_000_000) -> str:
     The full file is parsed to preserve Codex ``session_meta.cwd`` near the
     beginning; high-volume fields are bounded by the parser itself.
     """
-    from lex.v3.transcript_parser import TranscriptParser
+    from neuraltape.v3.transcript_parser import TranscriptParser
 
     # The parser already truncates each high-volume field. Keeping the whole
     # JSONL preserves Codex session_meta.cwd, which is normally near the start.
@@ -136,7 +136,7 @@ def harvest(
 ) -> list[dict]:
     """Discover, score, and return the validation plan."""
     # Expand and deduplicate transcripts.
-    from lex.v3.transcript_watcher import TranscriptWatcher
+    from neuraltape.v3.transcript_watcher import TranscriptWatcher
     watcher = TranscriptWatcher()
     if transcripts_glob:
         raw_paths = [Path(p) for p in _glob(transcripts_glob)]

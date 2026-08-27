@@ -158,7 +158,7 @@ kind: django-app              # opzionale, informativo
 - Regex `^[a-z0-9][a-z0-9-]{0,31}$`.
 - No collisioni tra project_id configurati (errore a startup).
 
-**Bootstrapping (una tantum per i 6 workspace):** script `lex/v3/bootstrap_projects.py` che crea `.neuraltape/project.yaml` con ID proposti:
+**Bootstrapping (una tantum per i 6 workspace):** script `neuraltape/v3/bootstrap_projects.py` che crea `.neuraltape/project.yaml` con ID proposti:
 - `etercervo`, `zeus`, `cais-lp`, `tec-andrea`, `s4all-bot`, `neuraltape`.
 
 **Exit criterion:** `ProjectResolver().resolve(Path(".../Zeus")).project_id == "zeus"` da qualsiasi cwd.
@@ -354,7 +354,7 @@ v3:
     extra_patterns: []              # list of [regex, kind]
 ```
 
-Lettura via `lex/v3/config.py` (estende il loader esistente).
+Lettura via `neuraltape/v3/config.py` (estende il loader esistente).
 
 ---
 
@@ -384,14 +384,14 @@ Tutti devono essere verdi prima di passare a Fase 1.
 
 ## 7. Ordine di implementazione
 
-1. `lex/v3/__init__.py` + `config.py` (bootstrap).
+1. `neuraltape/v3/__init__.py` + `config.py` (bootstrap).
 2. `project.py` + `bootstrap_projects.py` (Q4=C).
 3. `redaction.py` (D0.1).
 4. `storage.py` (D0.3).
 5. `events.py` (D0.4).
 6. `cost.py` (D0.5).
 7. `tests/v3/*` + `run_all.py` (D0.6).
-8. Smoke test di coesistenza: `NEURALTAPE_V3=1 python lex/v3/run.py --selfcheck`.
+8. Smoke test di coesistenza: `NEURALTAPE_V3=1 python neuraltape/v3/run.py --selfcheck`.
 
 ---
 

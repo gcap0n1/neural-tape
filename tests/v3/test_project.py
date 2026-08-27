@@ -1,4 +1,4 @@
-"""Test per lex/v3/project.py (Q4=C)."""
+"""Test per neuraltape/v3/project.py (Q4=C)."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from project import (  # type: ignore[import-not-found]
+from neuraltape.v3.project import (  # type: ignore[import-not-found]
     ID_REGEX,
     ProjectResolver,
     write_project_config,

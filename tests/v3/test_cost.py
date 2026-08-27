@@ -1,4 +1,4 @@
-"""Test per lex/v3/cost.py (D0.5)."""
+"""Test per neuraltape/v3/cost.py (D0.5)."""
 
 from __future__ import annotations
 
@@ -8,9 +8,9 @@ import tempfile
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from cost import CostBudget, CostPolicy  # type: ignore[ignore]
+from neuraltape.v3.cost import CostBudget, CostPolicy  # type: ignore[ignore]
 
 
 def _policy(calls=100, tokens=100000, notify_hours=24) -> tuple[CostPolicy, Path]:

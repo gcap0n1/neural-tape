@@ -1,4 +1,4 @@
-"""Test per lex/v3/markdown_export.py — forward-compat bridge v3 -> markdown archive.
+"""Test per neuraltape/v3/markdown_export.py — forward-compat bridge v3 -> markdown archive.
 
 Verifica che gli episodi v3 vengano scritti con lo stesso schema markdown
 consumato da lex/pre_load.py (standardizzato 2026-07-18).
@@ -17,8 +17,8 @@ NT_ROOT = Path(__file__).resolve().parents[2]
 if str(NT_ROOT) not in sys.path:
     sys.path.insert(0, str(NT_ROOT))
 
-from lex.v3.markdown_export import export_episode_to_markdown, export_episodes_bulk
-from lex.v3.storage import Episode
+from neuraltape.v3.markdown_export import export_episode_to_markdown, export_episodes_bulk
+from neuraltape.v3.storage import Episode
 
 
 def _episode(title: str = "Test insight schema v3 export", conf: float = 0.85) -> Episode:

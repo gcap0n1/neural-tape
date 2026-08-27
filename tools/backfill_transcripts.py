@@ -67,7 +67,7 @@ def main() -> int:
         if e.get("session_id") and e.get("project_id") and e.get("project_root")
     }
 
-    from lex.v3.transcript_watcher import TranscriptWatcher
+    from neuraltape.v3.transcript_watcher import TranscriptWatcher
     watcher = TranscriptWatcher()
     now = time.time()
     candidates: list[tuple[float, int, Path]] = []
@@ -95,7 +95,7 @@ def main() -> int:
         return 0
 
     os.environ["NEURALTAPE_V3"] = "1"
-    from lex.v3.run import run_once
+    from neuraltape.v3.run import run_once
 
     processed = 0
     total_eps = 0

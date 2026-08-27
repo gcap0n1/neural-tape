@@ -7,7 +7,7 @@ Type=oneshot
 # Adapt the two paths below to your checkout (see docs/INSTALL.md).
 WorkingDirectory=/path/to/neural-tape
 Environment=NEURALTAPE_V3=1
-ExecStart=/path/to/neural-tape/lex/v3/run-cron-v3.sh
+ExecStart=/path/to/neural-tape/neuraltape/v3/run-cron-v3.sh
 
 [Install]
 WantedBy=timers.target

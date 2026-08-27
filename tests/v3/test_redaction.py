@@ -1,4 +1,4 @@
-"""Test per lex/v3/redaction.py (D0.1)."""
+"""Test per neuraltape/v3/redaction.py (D0.1)."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 
 # Ensure nt_v3 package is registered by run_all.py loader.
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from redaction import Redactor  # type: ignore[import-not-found]
+from neuraltape.v3.redaction import Redactor  # type: ignore[import-not-found]
 
 
 def test_aws_access_key():

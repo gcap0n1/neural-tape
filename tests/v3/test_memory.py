@@ -1,4 +1,4 @@
-"""Test per lex/v3/memory.py (D1.2)."""
+"""Test per neuraltape/v3/memory.py (D1.2)."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "lex" / "v3"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from storage import Episode, Storage  # type: ignore[import-not-found]
-from memory import MemoryPromoter  # type: ignore[import-not-found]
+from neuraltape.v3.storage import Episode, Storage  # type: ignore[import-not-found]
+from neuraltape.v3.memory import MemoryPromoter  # type: ignore[import-not-found]
 
 
 def _storage() -> Storage:

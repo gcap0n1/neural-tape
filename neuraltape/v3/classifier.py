@@ -77,6 +77,10 @@ For each worthy insight return:
 - "layer": "working" | "episodic" | "semantic"
 - "confidence": float 0.0-1.0 representing certainty that the insight is true and useful
 - "evidence": an EXACT 5-25 word quote copied from the transcript
+- "entities": zero to five canonical technical or product names that appear
+    VERBATIM in the insight fields below (feature names, module/class names,
+    tool commands, components; CamelCase or TitleCase preferred). They power
+    name-based retrieval later. Omit the key when there are none.
 
 RULES:
 - Return at most 8 insights; prefer a few correct insights.
@@ -86,6 +90,8 @@ RULES:
     Every fact in title/context must be supported by the "evidence" field.
 - "evidence" must occur literally in the transcript. Paraphrases,
     reconstructions, and deductions are not evidence.
+- Every string in "entities" must occur literally inside "title", "context"
+    or "evidence". Never invent product, library, or project names.
 - Use "preference" only for an explicit user preference. An implementation or
     architectural choice is a "decision".
 - Do not turn an `[ASSISTANT]` proposal, recommendation, or inference into a confirmed
@@ -97,7 +103,7 @@ RULES:
 - Return valid JSON only, without Markdown or commentary.
 
 Output format:
-{{"insights": [{{"category":"...","title":"...","context":"...","implication":"...","layer":"...","confidence":0.0,"evidence":"exact quote"}}]}}
+{{"insights": [{{"category":"...","title":"...","context":"...","implication":"...","layer":"...","confidence":0.0,"evidence":"exact quote","entities":["Name One","TwoWord"]}}]}}
 
 Transcript:
 ---
@@ -122,9 +128,21 @@ class ClassifierInsight:
     layer: str          # "working" | "episodic" | "semantic"
     confidence: float
     evidence: str = ""
+    entities: list[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, d: dict) -> ClassifierInsight:
+        raw_entities = d.get("entities") or []
+        entities: list[str] = []
+        seen: set[str] = set()
+        for item in raw_entities:
+            name = str(item).strip()
+            if not name or len(name) < 2 or name.casefold() in seen:
+                continue
+            seen.add(name.casefold())
+            entities.append(name)
+            if len(entities) >= 5:
+                break
         return cls(
             category=str(d.get("category", "")),
             title=str(d.get("title", "")),
@@ -133,6 +151,7 @@ class ClassifierInsight:
             layer=str(d.get("layer", "working")),
             confidence=float(d.get("confidence", 0.0)),
             evidence=str(d.get("evidence", "")),
+            entities=entities,
         )
 
     def validate(self, evidence_source: str | None = None) -> list[str]:
@@ -317,7 +336,9 @@ class ClassifierV3:
                 title=ins.title,
                 body=body,
                 confidence=ins.confidence,
-                raw_payload={"session_id": session_id, "evidence": ins.evidence},
+                raw_payload={"session_id": session_id, "evidence": ins.evidence,
+                             "entities": ins.entities},
+                entities=ins.entities,
                 dedup_key=dedup_key,
             )
             self.storage.put_episode(ep)
