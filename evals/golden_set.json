@@ -1,0 +1,70 @@
+{
+  "_meta": {
+    "description": "Golden recall set ermetico (Fase 4): ogni caso costruisce il proprio DB in memoria temporanea e verifica che gli insight designati riemergano (o tacciano) secondo il contratto.",
+    "notes": "Ermetico: niente dipendenze da DB live, niente LLM, ordini deterministici via created_at espliciti."
+  },
+  "top_k_default": 5,
+  "cases": [
+    {
+      "name": "named-retrieval-via-entity-stream-only",
+      "assert": "contains_topk",
+      "query": "gap engine",
+      "needle_title": "Deploy motori concluso",
+      "docs": [
+        {"title": "Deploy motori concluso", "body": "riscrittura del motore completata", "category": "decision", "kind": "semantic", "confidence": 0.9, "entities": ["GapEngine"], "age_offset": 0},
+        {"title": "report filler 1", "body": "gap engine bridge target racconto differenze", "category": "warning", "kind": "episodic", "confidence": 0.8, "age_offset": 10},
+        {"title": "report filler 2", "body": "gap engine bridge target racconto differenze", "category": "warning", "kind": "episodic", "confidence": 0.75, "age_offset": 20},
+        {"title": "report filler 3", "body": "gap engine bridge target racconto differenze", "category": "warning", "kind": "episodic", "confidence": 0.7, "age_offset": 30}
+      ]
+    },
+    {
+      "name": "italian-diacritics-fold-both-ways",
+      "assert": "contains_topk",
+      "query": "configurazióne ambiente",
+      "needle_title": "Setup ambiente completato",
+      "docs": [
+        {"title": "Setup ambiente completato", "body": "configurazione ambiente validata senza errori", "category": "decision", "kind": "semantic", "confidence": 0.9, "age_offset": 0},
+        {"title": "rumore irrelevante", "body": "appunti vari di giornata", "category": "tool", "kind": "episodic", "confidence": 0.6, "age_offset": 5}
+      ]
+    },
+    {
+      "name": "pinned-authority-ranks-first",
+      "assert": "first",
+      "query": "aggiornamento firmware",
+      "needle_title": "Procedura firmware pinnata",
+      "docs": [
+        {"title": "Procedura firmware pinnata", "body": "aggiornamento firmware passo passo documentato", "category": "decision", "kind": "semantic", "confidence": 0.85, "pinned": true, "age_offset": 100},
+        {"title": "nota recente non pinnata", "body": "aggiornamento firmware menzionato di sfuggita", "category": "tool", "kind": "episodic", "confidence": 0.6, "age_offset": 0}
+      ]
+    },
+    {
+      "name": "forgotten-episode-never-surfaces",
+      "assert": "absent",
+      "query": "credenziali transienti",
+      "needle_title": "Segreto transiente da dimenticare",
+      "docs": [
+        {"title": "Segreto transiente da dimenticare", "body": "credenziali transienti di test", "category": "warning", "kind": "episodic", "confidence": 0.8, "age_offset": 0, "forget": true},
+        {"title": "voce sana sullo stesso tema", "body": "credenziali transienti gestite via vault", "category": "tool", "kind": "semantic", "confidence": 0.9, "age_offset": 5}
+      ]
+    },
+    {
+      "name": "rrf-multi-stream-beats-single",
+      "assert": "first",
+      "query": "pudding ricetta",
+      "needle_title": "PuddingEngineering ricetta definitiva",
+      "docs": [
+        {"title": "PuddingEngineering ricetta definitiva", "body": "il pudding si prepara al mattino", "category": "pattern", "kind": "semantic", "confidence": 0.9, "entities": ["PuddingEngineering"], "age_offset": 40},
+        {"title": "solo testo casuale", "body": "pudding pudding pudding senza identita", "category": "tool", "kind": "episodic", "confidence": 0.5, "age_offset": 0}
+      ]
+    },
+    {
+      "name": "hostile-query-is-safe",
+      "assert": "no_crash",
+      "query": "colonna\" ne \" (SELECT) : MATCH",
+      "needle_title": null,
+      "docs": [
+        {"title": "contesto neutrale", "body": "testo di riferimento per la sicurezza", "category": "tool", "kind": "episodic", "confidence": 0.7, "age_offset": 0}
+      ]
+    }
+  ]
+}
